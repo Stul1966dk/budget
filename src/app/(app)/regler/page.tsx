@@ -2,7 +2,14 @@ import { createClient } from "@/lib/supabase/server";
 import type { Category, TextMappingRow } from "@/lib/types/db";
 import { RuleList } from "./RuleList";
 
-export default async function ReglerPage() {
+export default async function ReglerPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ filter?: string }>;
+}) {
+  const params = await searchParams;
+  const showAll = params.filter === "alle";
+
   const supabase = await createClient();
 
   const [{ data: rulesData }, { data: categoriesData }, { data: mappingIdsData }] =
@@ -15,8 +22,10 @@ export default async function ReglerPage() {
       supabase.from("transactions").select("mapping_id").not("mapping_id", "is", null),
     ]);
 
-  const rules = (rulesData ?? []) as TextMappingRow[];
+  const allRules = (rulesData ?? []) as TextMappingRow[];
   const categories = (categoriesData ?? []) as Category[];
+  const activeCount = allRules.filter((r) => r.active).length;
+  const rules = showAll ? allRules : allRules.filter((r) => r.active);
 
   const matchCounts: Record<string, number> = {};
   for (const row of mappingIdsData ?? []) {
@@ -31,6 +40,29 @@ export default async function ReglerPage() {
         Mapping-regler udfylder automatisk kommentar og kategori på nye
         posteringer ved import, ud fra deres rå tekst fra banken.
       </p>
+
+      <div className="mt-4 inline-flex items-center gap-1 rounded-xl border border-stone-200 bg-white p-1">
+        <a
+          href="?"
+          className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+            !showAll
+              ? "bg-forest-900 text-white"
+              : "text-stone-600 hover:bg-stone-100"
+          }`}
+        >
+          Aktive ({activeCount})
+        </a>
+        <a
+          href="?filter=alle"
+          className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+            showAll
+              ? "bg-forest-900 text-white"
+              : "text-stone-600 hover:bg-stone-100"
+          }`}
+        >
+          Alle ({allRules.length})
+        </a>
+      </div>
 
       <RuleList rules={rules} categories={categories} matchCounts={matchCounts} />
     </div>
