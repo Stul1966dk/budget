@@ -5,7 +5,7 @@ import { YearTable, type YearTableCategory } from "./aar/YearTable";
 
 type YearTransaction = Pick<
   TransactionRow,
-  "date" | "amount" | "category_id" | "is_extraordinary" | "raw_text" | "comment" | "mapping_id"
+  "date" | "amount" | "category_id" | "is_extraordinary" | "raw_text" | "comment"
 >;
 
 export default async function AarPage({
@@ -34,7 +34,7 @@ export default async function AarPage({
     supabase.from("categories").select("*").order("sort_order"),
     supabase
       .from("transactions")
-      .select("date, amount, category_id, is_extraordinary, raw_text, comment, mapping_id")
+      .select("date, amount, category_id, is_extraordinary, raw_text, comment")
       .gte("date", start)
       .lte("date", end)
       .eq("is_extraordinary", false),
@@ -45,7 +45,7 @@ export default async function AarPage({
   const categoryMap = new Map(categories.map((c) => [c.id, c]));
 
   const categoryGrid = new Map<string, number[]>();
-  const itemGrid = new Map<string, Map<string, { label: string; months: number[] }>>();
+  const itemGrid = new Map<string, Map<string, number[]>>();
 
   function bucket(map: Map<string, number[]>, key: string): number[] {
     let months = map.get(key);
@@ -66,38 +66,27 @@ export default async function AarPage({
 
     if (!itemGrid.has(categoryKey)) itemGrid.set(categoryKey, new Map());
     const items = itemGrid.get(categoryKey)!;
-    const itemKey = t.mapping_id ?? t.raw_text;
-    if (!items.has(itemKey)) {
-      items.set(itemKey, { label: t.comment ?? t.raw_text, months: new Array(12).fill(0) });
+    // Grupperes efter den viste tekst (kommentar, ellers rå tekst) - ikke
+    // efter mapping-regel. Flere poster kan dele samme regel (fx "Oister")
+    // men være forskellige abonnementer med skiftende suffiks hver måned -
+    // de skal vises hver for sig, indtil brugeren selv sætter en kommentar
+    // der adskiller dem. Omvendt skal to poster med samme kommentar altid
+    // vises som én række, uanset om de kom fra samme regel eller ej.
+    const itemLabel = t.comment ?? t.raw_text;
+    if (!items.has(itemLabel)) {
+      items.set(itemLabel, new Array(12).fill(0));
     }
-    items.get(itemKey)!.months[monthIndex] += amount;
+    items.get(itemLabel)![monthIndex] += amount;
   }
 
   const rows: YearTableCategory[] = Array.from(categoryGrid.entries())
     .map(([key, months]) => {
-      // To forskellige mapping-regler kan pege på samme tekst (fx hvis en
-      // regel er oprettet to gange for samme post) - de skal vises som én
-      // række, ikke splittes ud efter internt regel-id.
-      const mergedByLabel = new Map<string, number[]>();
-      for (const { label, months: itemMonths } of (
-        itemGrid.get(key) ?? new Map<string, { label: string; months: number[] }>()
-      ).values()) {
-        const existing = mergedByLabel.get(label);
-        if (existing) {
-          itemMonths.forEach((v, i) => {
-            existing[i] += v;
-          });
-        } else {
-          mergedByLabel.set(label, [...itemMonths]);
-        }
-      }
-
-      const items = Array.from(mergedByLabel.entries())
+      const items = Array.from((itemGrid.get(key) ?? new Map()).entries())
         .map(([label, itemMonths]) => ({
           key: label,
           label,
           months: itemMonths,
-          total: itemMonths.reduce((sum, v) => sum + v, 0),
+          total: itemMonths.reduce((sum: number, v: number) => sum + v, 0),
         }))
         .sort((a, b) => b.total - a.total);
 
