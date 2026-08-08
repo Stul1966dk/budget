@@ -9,11 +9,18 @@ export type MonthlySavings = {
   savings: number;
 };
 
+const SAVINGS_PATTERN = /opspar|pension/i;
+
 /**
  * Beregner måned-for-måned indtægt, udgifter, resultat og opsparingsbeløb
- * (posteringer i kategorier der matcher "opsparing" eller "pension") for de
- * seneste `monthsBack` måneder. Ekstraordinære posteringer indgår ikke, da de
- * ville forvride det normale billede.
+ * for de seneste `monthsBack` måneder. Ekstraordinære posteringer indgår
+ * ikke, da de ville forvride det normale billede.
+ *
+ * En postering tæller som opsparing hvis enten dens kategori-navn matcher
+ * "opsparing"/"pension", ELLER dens kommentar/rå tekst gør det - fx
+ * "Overførsel til opsparing" som er kategoriseret som Overførsler (jf.
+ * seed-reglerne for interne overførsler), ikke Pension/Opsparing. Kategori
+ * alene ville overse den slags interne opsparingsoverførsler.
  */
 export function computeSavingsRate(
   transactions: TransactionRow[],
@@ -21,8 +28,12 @@ export function computeSavingsRate(
   monthsBack = 6,
 ): MonthlySavings[] {
   const savingsCategoryIds = new Set(
-    categories.filter((c) => /opspar|pension/i.test(c.name)).map((c) => c.id),
+    categories.filter((c) => SAVINGS_PATTERN.test(c.name)).map((c) => c.id),
   );
+
+  const isSavingsTransaction = (t: TransactionRow) =>
+    (t.category_id !== null && savingsCategoryIds.has(t.category_id)) ||
+    SAVINGS_PATTERN.test(t.comment ?? t.raw_text);
 
   const ordinary = transactions.filter((t) => !t.is_extraordinary);
   const byMonth = new Map<string, TransactionRow[]>();
@@ -45,12 +56,7 @@ export function computeSavingsRate(
       .filter((t) => t.amount < 0)
       .reduce((sum, t) => sum + t.amount, 0);
     const savings = txs
-      .filter(
-        (t) =>
-          t.amount < 0 &&
-          t.category_id !== null &&
-          savingsCategoryIds.has(t.category_id),
-      )
+      .filter((t) => t.amount < 0 && isSavingsTransaction(t))
       .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
     return { monthKey, income, expenses, result: income + expenses, savings };

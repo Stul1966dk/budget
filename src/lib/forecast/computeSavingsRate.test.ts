@@ -61,6 +61,47 @@ describe("computeSavingsRate", () => {
     expect(result[0].result).toBe(30000);
   });
 
+  it("tæller en overførsel til opsparing selvom den er kategoriseret som Overførsler", () => {
+    // "Overførsel til opsparing" er per seed-reglerne kategoriseret som
+    // Overførsler, ikke Pension/Opsparing - kategori alene ville overse den.
+    const categoriesWithTransfers: Category[] = [
+      ...categories,
+      { id: "c-transfers", name: "Overførsler", color: null, sort_order: 3 },
+    ];
+    const transactions = [
+      makeTx({ date: "2026-01-05", amount: 30000 }),
+      makeTx({
+        date: "2026-01-10",
+        amount: -5000,
+        category_id: "c-transfers",
+        comment: "Overførsel til opsparing",
+      }),
+    ];
+
+    const result = computeSavingsRate(transactions, categoriesWithTransfers);
+
+    expect(result[0].savings).toBe(5000);
+  });
+
+  it("tæller ikke en almindelig overførsel der ikke nævner opsparing", () => {
+    const categoriesWithTransfers: Category[] = [
+      ...categories,
+      { id: "c-transfers", name: "Overførsler", color: null, sort_order: 3 },
+    ];
+    const transactions = [
+      makeTx({
+        date: "2026-01-10",
+        amount: -2000,
+        category_id: "c-transfers",
+        comment: "Til Madkonto",
+      }),
+    ];
+
+    const result = computeSavingsRate(transactions, categoriesWithTransfers);
+
+    expect(result[0].savings).toBe(0);
+  });
+
   it("begrænser til de seneste `monthsBack` måneder", () => {
     const transactions = [
       makeTx({ date: "2025-01-05", amount: 100 }),
