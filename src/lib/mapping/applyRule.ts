@@ -1,4 +1,4 @@
-import { ruleMatchesText } from "./matchRule";
+import { ruleMatchesTransaction } from "./matchRule";
 import type { MappableTransaction, MappingRule } from "./types";
 
 /**
@@ -32,9 +32,7 @@ export function computeAutoMappingUpdate(
   rule: MappingRule,
 ): AutoMappingUpdate | null {
   if (!isEligibleForAutoMapping(transaction)) return null;
-  if (!ruleMatchesText(transaction.rawText, rule.matchPattern, rule.matchType)) {
-    return null;
-  }
+  if (!ruleMatchesTransaction(transaction, rule)) return null;
 
   return {
     comment: rule.comment,

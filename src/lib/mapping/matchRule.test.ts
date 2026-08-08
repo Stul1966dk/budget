@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ruleMatchesText } from "./matchRule";
+import { amountMatchesRange, ruleMatchesText } from "./matchRule";
 
 describe("ruleMatchesText", () => {
   it("matcher prefix uafhængigt af suffiks-variation (Oister)", () => {
@@ -35,5 +35,43 @@ describe("ruleMatchesText", () => {
 
   it("matcher ikke når mønsteret ikke findes i teksten", () => {
     expect(ruleMatchesText("Netflix", "Spotify", "prefix")).toBe(false);
+  });
+});
+
+describe("amountMatchesRange", () => {
+  it("matcher ethvert beløb når intervallet er tomt", () => {
+    expect(amountMatchesRange(-137.85, { minAmount: null, maxAmount: null })).toBe(
+      true,
+    );
+  });
+
+  it("bruger beløbets absolutte værdi, uafhængigt af fortegn", () => {
+    expect(
+      amountMatchesRange(-137.85, { minAmount: 136, maxAmount: 139 }),
+    ).toBe(true);
+    expect(
+      amountMatchesRange(137.85, { minAmount: 136, maxAmount: 139 }),
+    ).toBe(true);
+  });
+
+  it("afviser et beløb under et sat minimum", () => {
+    expect(amountMatchesRange(-100, { minAmount: 136, maxAmount: null })).toBe(
+      false,
+    );
+  });
+
+  it("afviser et beløb over et sat maksimum", () => {
+    expect(amountMatchesRange(-200, { minAmount: null, maxAmount: 139 })).toBe(
+      false,
+    );
+  });
+
+  it("understøtter et åbent interval (kun min sat)", () => {
+    expect(amountMatchesRange(-1347.49, { minAmount: 500, maxAmount: null })).toBe(
+      true,
+    );
+    expect(amountMatchesRange(-137.85, { minAmount: 500, maxAmount: null })).toBe(
+      false,
+    );
   });
 });

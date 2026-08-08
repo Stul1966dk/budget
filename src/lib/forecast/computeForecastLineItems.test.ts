@@ -30,6 +30,8 @@ function makeMapping(overrides: Partial<TextMappingRow>): TextMappingRow {
     match_type: "prefix",
     comment: null,
     category_id: null,
+    min_amount: null,
+    max_amount: null,
     active: true,
     created_at: "2026-01-01T00:00:00Z",
     ...overrides,

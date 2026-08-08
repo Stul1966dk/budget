@@ -14,6 +14,8 @@ const editSchema = z.object({
   createRule: z.boolean(),
   matchPattern: z.string().trim().min(1).max(200).optional(),
   matchType: z.enum(["prefix", "contains", "exact"]).optional(),
+  minAmount: z.number().nonnegative().nullable().optional(),
+  maxAmount: z.number().nonnegative().nullable().optional(),
 });
 
 export type SaveTransactionEditInput = z.infer<typeof editSchema>;
@@ -31,7 +33,7 @@ async function fetchUnmappedCandidates(
 ): Promise<MappableTransaction[]> {
   let query = supabase
     .from("transactions")
-    .select("id, raw_text, comment, category_id, mapping_id")
+    .select("id, raw_text, amount, comment, category_id, mapping_id")
     .is("comment", null)
     .is("category_id", null)
     .is("mapping_id", null);
@@ -45,6 +47,7 @@ async function fetchUnmappedCandidates(
   return (data ?? []).map((t) => ({
     id: t.id,
     rawText: t.raw_text,
+    amount: t.amount,
     comment: t.comment,
     categoryId: t.category_id,
     mappingId: t.mapping_id,
@@ -78,6 +81,8 @@ export async function saveTransactionEdit(
 
   if (data.createRule && data.matchPattern) {
     const ruleComment = data.comment?.length ? data.comment : null;
+    const minAmount = data.minAmount ?? null;
+    const maxAmount = data.maxAmount ?? null;
 
     const { data: ruleRow, error: ruleError } = await supabase
       .from("text_mappings")
@@ -86,6 +91,8 @@ export async function saveTransactionEdit(
         match_type: data.matchType ?? "prefix",
         comment: ruleComment,
         category_id: data.categoryId,
+        min_amount: minAmount,
+        max_amount: maxAmount,
       })
       .select("id")
       .single();
@@ -106,6 +113,8 @@ export async function saveTransactionEdit(
         matchType: data.matchType ?? "prefix",
         comment: ruleComment,
         categoryId: data.categoryId,
+        minAmount,
+        maxAmount,
       };
       const matches = findRetroactiveMatches(rule, candidates);
       newRule = {
@@ -155,7 +164,7 @@ export async function applyRuleRetroactively(ruleId: string): Promise<{
 
   const { data: ruleRow, error: ruleError } = await supabase
     .from("text_mappings")
-    .select("id, match_pattern, match_type, comment, category_id")
+    .select("id, match_pattern, match_type, comment, category_id, min_amount, max_amount")
     .eq("id", ruleId)
     .single();
 
@@ -169,6 +178,8 @@ export async function applyRuleRetroactively(ruleId: string): Promise<{
     matchType: ruleRow.match_type,
     comment: ruleRow.comment,
     categoryId: ruleRow.category_id,
+    minAmount: ruleRow.min_amount,
+    maxAmount: ruleRow.max_amount,
   };
 
   const candidates = await fetchUnmappedCandidates(supabase);

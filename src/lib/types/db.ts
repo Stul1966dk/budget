@@ -11,6 +11,8 @@ export type TextMappingRow = {
   match_type: "prefix" | "contains" | "exact";
   comment: string | null;
   category_id: string | null;
+  min_amount: number | null;
+  max_amount: number | null;
   active: boolean;
   created_at: string;
 };

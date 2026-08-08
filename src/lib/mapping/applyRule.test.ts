@@ -8,11 +8,14 @@ const rule: MappingRule = {
   matchType: "prefix",
   comment: "Mobilabonnement",
   categoryId: "cat-mobil",
+  minAmount: null,
+  maxAmount: null,
 };
 
 const untouched = (overrides: Partial<MappableTransaction>): MappableTransaction => ({
   id: "t-1",
   rawText: "Oister NIXGG",
+  amount: -99,
   comment: null,
   categoryId: null,
   mappingId: null,
@@ -49,6 +52,20 @@ describe("computeAutoMappingUpdate", () => {
       rule,
     );
     expect(result).toBeNull();
+  });
+
+  it("springer over hvis beløbet falder uden for reglens interval", () => {
+    const rangedRule: MappingRule = { ...rule, minAmount: 136, maxAmount: 139 };
+    expect(
+      computeAutoMappingUpdate(untouched({ amount: -176.92 }), rangedRule),
+    ).toBeNull();
+  });
+
+  it("anvender en regel med beløbsinterval når beløbet falder inden for", () => {
+    const rangedRule: MappingRule = { ...rule, minAmount: 136, maxAmount: 139 };
+    expect(
+      computeAutoMappingUpdate(untouched({ amount: -137.85 }), rangedRule),
+    ).not.toBeNull();
   });
 });
 

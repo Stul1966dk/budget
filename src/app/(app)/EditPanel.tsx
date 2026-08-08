@@ -12,6 +12,8 @@ export type EditPanelValues = {
   createRule: boolean;
   matchPattern?: string;
   matchType?: MatchType;
+  minAmount?: number | null;
+  maxAmount?: number | null;
 };
 
 export function EditPanel({
@@ -37,6 +39,10 @@ export function EditPanel({
     suggestMappingPattern(transaction.raw_text),
   );
   const [matchType, setMatchType] = useState<MatchType>("prefix");
+  const [useAmountRange, setUseAmountRange] = useState(false);
+  const transactionMagnitude = Math.round(Math.abs(transaction.amount) * 100) / 100;
+  const [minAmount, setMinAmount] = useState(String(transactionMagnitude - 2));
+  const [maxAmount, setMaxAmount] = useState(String(transactionMagnitude + 2));
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,6 +53,8 @@ export function EditPanel({
       createRule,
       matchPattern: createRule ? matchPattern.trim() : undefined,
       matchType: createRule ? matchType : undefined,
+      minAmount: createRule && useAmountRange && minAmount.trim() ? Number(minAmount) : null,
+      maxAmount: createRule && useAmountRange && maxAmount.trim() ? Number(maxAmount) : null,
     });
   }
 
@@ -152,6 +160,42 @@ export function EditPanel({
                 <option value="exact">Er præcis (exact)</option>
               </select>
             </div>
+
+            <label className="flex items-center gap-2 text-xs text-stone-600">
+              <input
+                type="checkbox"
+                checked={useAmountRange}
+                onChange={(e) => setUseAmountRange(e.target.checked)}
+                className="h-4 w-4 rounded border-stone-300"
+              />
+              Kræv et bestemt beløb (hvis flere poster deler denne tekst, fx
+              flere forsikringer under samme banktekst)
+            </label>
+
+            {useAmountRange && (
+              <div>
+                <label className="block text-xs font-medium text-stone-600">
+                  Beløbsinterval (kr., uden fortegn)
+                </label>
+                <div className="mt-1 flex items-center gap-2">
+                  <input
+                    value={minAmount}
+                    onChange={(e) => setMinAmount(e.target.value)}
+                    inputMode="decimal"
+                    placeholder="Min"
+                    className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
+                  />
+                  <span className="text-stone-400">–</span>
+                  <input
+                    value={maxAmount}
+                    onChange={(e) => setMaxAmount(e.target.value)}
+                    inputMode="decimal"
+                    placeholder="Max"
+                    className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
 

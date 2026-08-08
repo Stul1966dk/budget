@@ -18,6 +18,18 @@ function matchTypeLabel(type: MatchType): string {
   }
 }
 
+function amountRangeLabel(
+  minAmount: number | null,
+  maxAmount: number | null,
+): string | null {
+  if (minAmount === null && maxAmount === null) return null;
+  if (minAmount !== null && maxAmount !== null) {
+    return `${minAmount}–${maxAmount} kr.`;
+  }
+  if (minAmount !== null) return `over ${minAmount} kr.`;
+  return `op til ${maxAmount} kr.`;
+}
+
 export function RuleList({
   rules,
   categories,
@@ -90,6 +102,11 @@ export function RuleList({
                   <span className="text-xs text-stone-400">
                     {matchTypeLabel(rule.match_type)}
                   </span>
+                  {amountRangeLabel(rule.min_amount, rule.max_amount) && (
+                    <span className="rounded bg-stone-100 px-2 py-0.5 text-xs text-stone-600">
+                      {amountRangeLabel(rule.min_amount, rule.max_amount)}
+                    </span>
+                  )}
                   {category && (
                     <span
                       className={`rounded-full px-2 py-0.5 text-[11px] font-medium text-white ${
@@ -184,6 +201,12 @@ function RuleEditForm({
   const [matchType, setMatchType] = useState<MatchType>(rule.match_type);
   const [comment, setComment] = useState(rule.comment ?? "");
   const [categoryId, setCategoryId] = useState(rule.category_id ?? "");
+  const [minAmount, setMinAmount] = useState(
+    rule.min_amount !== null ? String(rule.min_amount) : "",
+  );
+  const [maxAmount, setMaxAmount] = useState(
+    rule.max_amount !== null ? String(rule.max_amount) : "",
+  );
   const [isSaving, setIsSaving] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -195,6 +218,8 @@ function RuleEditForm({
       matchType,
       comment: comment.trim().length ? comment.trim() : null,
       categoryId: categoryId || null,
+      minAmount: minAmount.trim() ? Number(minAmount.trim().replace(",", ".")) : null,
+      maxAmount: maxAmount.trim() ? Number(maxAmount.trim().replace(",", ".")) : null,
     });
     setIsSaving(false);
     onSaved();
@@ -237,6 +262,29 @@ function RuleEditForm({
           </option>
         ))}
       </select>
+      <div>
+        <label className="block text-xs font-medium text-stone-600">
+          Beløbsinterval (valgfrit, kr. uden fortegn - skelner poster med
+          identisk tekst)
+        </label>
+        <div className="mt-1 flex items-center gap-2">
+          <input
+            value={minAmount}
+            onChange={(e) => setMinAmount(e.target.value)}
+            inputMode="decimal"
+            placeholder="Min"
+            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
+          />
+          <span className="text-stone-400">–</span>
+          <input
+            value={maxAmount}
+            onChange={(e) => setMaxAmount(e.target.value)}
+            inputMode="decimal"
+            placeholder="Max"
+            className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
+          />
+        </div>
+      </div>
       <div className="flex gap-2">
         <button
           type="button"

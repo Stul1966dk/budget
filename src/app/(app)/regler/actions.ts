@@ -10,6 +10,8 @@ const updateSchema = z.object({
   matchType: z.enum(["prefix", "contains", "exact"]),
   comment: z.string().trim().max(500).nullable(),
   categoryId: z.string().uuid().nullable(),
+  minAmount: z.number().nonnegative().nullable(),
+  maxAmount: z.number().nonnegative().nullable(),
 });
 
 export type UpdateMappingRuleInput = z.infer<typeof updateSchema>;
@@ -31,6 +33,8 @@ export async function updateMappingRule(
       match_type: data.matchType,
       comment: data.comment,
       category_id: data.categoryId,
+      min_amount: data.minAmount,
+      max_amount: data.maxAmount,
     })
     .eq("id", data.id);
 
