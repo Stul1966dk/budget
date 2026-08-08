@@ -42,7 +42,26 @@ export async function updateMappingRule(
     return { status: "error", message: "Kunne ikke gemme reglen." };
   }
 
+  // Slå navn/kategori igennem på alle posteringer der allerede er tildelt
+  // denne regel, så en omdøbning vises konsekvent overalt med det samme -
+  // ikke kun på nye posteringer der importeres fremover.
+  const { error: cascadeError } = await supabase
+    .from("transactions")
+    .update({ comment: data.comment, category_id: data.categoryId })
+    .eq("mapping_id", data.id);
+
+  if (cascadeError) {
+    console.error(
+      "updateMappingRule: kunne ikke opdatere eksisterende posteringer:",
+      cascadeError.code,
+      cascadeError.message,
+    );
+  }
+
+  revalidatePath("/");
   revalidatePath("/regler");
+  revalidatePath("/aar");
+  revalidatePath("/prognose");
   return { status: "success" };
 }
 
