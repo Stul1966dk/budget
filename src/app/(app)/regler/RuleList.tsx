@@ -39,7 +39,7 @@ export function RuleList({
 
   if (rules.length === 0) {
     return (
-      <p className="mt-6 text-sm text-slate-400">
+      <p className="mt-6 text-sm text-stone-400">
         Ingen regler oprettet endnu. Opret en regel ved at redigere en
         postering på oversigten og markere &quot;Anvend automatisk på
         lignende posteringer fremover&quot;.
@@ -49,7 +49,7 @@ export function RuleList({
 
   return (
     <>
-      <ul className="mt-6 divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <ul className="mt-6 divide-y divide-stone-100 overflow-hidden rounded-xl border border-stone-200 bg-white">
         {rules.map((rule) => {
           const category = rule.category_id
             ? categoryMap.get(rule.category_id)
@@ -75,19 +75,19 @@ export function RuleList({
             <li
               key={rule.id}
               className={`flex items-start justify-between gap-3 p-4 ${
-                rule.active ? "" : "bg-slate-50/60"
+                rule.active ? "" : "bg-stone-100/60"
               }`}
             >
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <span
-                    className={`rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700 ${
+                    className={`rounded bg-stone-100 px-2 py-0.5 font-mono text-xs text-stone-700 ${
                       rule.active ? "" : "line-through opacity-60"
                     }`}
                   >
                     {rule.match_pattern}
                   </span>
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-stone-400">
                     {matchTypeLabel(rule.match_type)}
                   </span>
                   {category && (
@@ -107,9 +107,9 @@ export function RuleList({
                   )}
                 </div>
                 {rule.comment && (
-                  <p className="mt-1 text-sm text-slate-600">{rule.comment}</p>
+                  <p className="mt-1 text-sm text-stone-600">{rule.comment}</p>
                 )}
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-stone-400">
                   {matchCounts[rule.id] ?? 0} posteringer matchet
                   {!rule.active &&
                     " · indgår ikke i prognose eller alarmer om manglende poster"}
@@ -125,14 +125,14 @@ export function RuleList({
                     setTogglingId(null);
                     router.refresh();
                   }}
-                  className="rounded-lg px-2 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-50"
+                  className="rounded-lg px-2 py-1.5 text-xs font-medium text-stone-500 hover:bg-stone-100 hover:text-stone-900 disabled:opacity-50"
                 >
                   {rule.active ? "Markér som afsluttet" : "Genaktivér"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditingId(rule.id)}
-                  className="rounded-lg px-2 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                  className="rounded-lg px-2 py-1.5 text-xs font-medium text-stone-500 hover:bg-stone-100 hover:text-stone-900"
                 >
                   Redigér
                 </button>
@@ -207,12 +207,12 @@ function RuleEditForm({
           value={matchPattern}
           onChange={(e) => setMatchPattern(e.target.value)}
           required
-          className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+          className="flex-1 rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
         />
         <select
           value={matchType}
           onChange={(e) => setMatchType(e.target.value as MatchType)}
-          className="rounded-lg border border-slate-300 bg-white px-2 py-2 text-sm focus:border-slate-500 focus:outline-none"
+          className="rounded-lg border border-stone-300 bg-white px-2 py-2 text-sm focus:border-stone-500 focus:outline-none"
         >
           <option value="prefix">Starter med</option>
           <option value="contains">Indeholder</option>
@@ -223,12 +223,12 @@ function RuleEditForm({
         value={comment}
         onChange={(e) => setComment(e.target.value)}
         placeholder="Kommentar"
-        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+        className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
       />
       <select
         value={categoryId}
         onChange={(e) => setCategoryId(e.target.value)}
-        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+        className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
       >
         <option value="">Ingen kategori</option>
         {categories.map((c) => (
@@ -241,14 +241,14 @@ function RuleEditForm({
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="flex-1 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100"
         >
           Annuller
         </button>
         <button
           type="submit"
           disabled={isSaving}
-          className="flex-1 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+          className="flex-1 rounded-lg bg-forest-900 px-4 py-2 text-sm font-medium text-white hover:bg-forest-800 disabled:opacity-50"
         >
           {isSaving ? "Gemmer..." : "Gem"}
         </button>

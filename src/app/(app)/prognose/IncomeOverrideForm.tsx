@@ -50,7 +50,7 @@ export function IncomeOverrideForm({
   return (
     <form onSubmit={handleSubmit} className="mt-3 flex flex-wrap items-end gap-2">
       <div>
-        <label htmlFor="income-override" className="block text-xs text-slate-500">
+        <label htmlFor="income-override" className="block text-xs text-stone-500">
           Forventet månedlig indbetaling (kr.)
         </label>
         <input
@@ -60,13 +60,13 @@ export function IncomeOverrideForm({
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={`Auto: ${formatCurrency(autoDetectedValue)}`}
-          className="mt-1 w-44 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-slate-500 focus:outline-none"
+          className="mt-1 w-44 rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:border-stone-500 focus:outline-none"
         />
       </div>
       <button
         type="submit"
         disabled={isSaving}
-        className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+        className="rounded-lg bg-forest-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-forest-800 disabled:opacity-50"
       >
         {isSaving ? "Gemmer..." : "Gem"}
       </button>
@@ -75,7 +75,7 @@ export function IncomeOverrideForm({
           type="button"
           onClick={handleReset}
           disabled={isSaving}
-          className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-100 disabled:opacity-50"
         >
           Nulstil til automatisk
         </button>

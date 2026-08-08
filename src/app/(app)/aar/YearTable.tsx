@@ -57,10 +57,10 @@ export function YearTable({
   }
 
   return (
-    <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200 bg-white">
+    <div className="mt-6 overflow-x-auto rounded-xl border border-stone-200 bg-white">
       <table className="w-full min-w-[720px] text-sm">
         <thead>
-          <tr className="border-b border-slate-200 text-xs uppercase text-slate-400">
+          <tr className="border-b border-stone-200 text-xs uppercase text-stone-400">
             <th className="sticky left-0 bg-white px-3 py-2 text-left font-medium">
               Kategori
             </th>
@@ -79,26 +79,26 @@ export function YearTable({
 
             return (
               <Fragment key={row.key}>
-                <tr className="border-b border-slate-100 last:border-0">
-                  <td className="sticky left-0 bg-white px-3 py-2 text-left text-slate-700">
+                <tr className="border-b border-stone-100 last:border-0">
+                  <td className="sticky left-0 bg-white px-3 py-2 text-left text-stone-700">
                     <button
                       type="button"
                       onClick={() => hasItems && toggle(row.key)}
                       disabled={!hasItems}
                       className="flex w-full items-center gap-1.5 text-left disabled:cursor-default"
                     >
-                      <span className="w-3 shrink-0 text-xs text-slate-400">
+                      <span className="w-3 shrink-0 text-xs text-stone-400">
                         {hasItems ? (isExpanded ? "▾" : "▸") : ""}
                       </span>
                       {row.name}
                     </button>
                   </td>
                   {row.months.map((value, i) => (
-                    <td key={i} className="px-2 py-2 text-right text-slate-600">
+                    <td key={i} className="px-2 py-2 text-right text-stone-600">
                       {value > 0 ? formatCurrency(value) : "–"}
                     </td>
                   ))}
-                  <td className="px-3 py-2 text-right font-medium text-slate-900">
+                  <td className="px-3 py-2 text-right font-medium text-stone-900">
                     {formatCurrency(row.total)}
                   </td>
                 </tr>
@@ -106,17 +106,17 @@ export function YearTable({
                   row.items.map((item) => (
                     <tr
                       key={item.key}
-                      className="border-b border-slate-50 bg-slate-50/60 last:border-0"
+                      className="border-b border-stone-50 bg-stone-100/60 last:border-0"
                     >
-                      <td className="sticky left-0 bg-slate-50/60 py-1.5 pl-9 pr-3 text-left text-xs text-slate-500">
+                      <td className="sticky left-0 bg-stone-100/60 py-1.5 pl-9 pr-3 text-left text-xs text-stone-500">
                         {item.label}
                       </td>
                       {item.months.map((value, i) => (
-                        <td key={i} className="px-2 py-1.5 text-right text-xs text-slate-500">
+                        <td key={i} className="px-2 py-1.5 text-right text-xs text-stone-500">
                           {value > 0 ? formatCurrency(value) : "–"}
                         </td>
                       ))}
-                      <td className="px-3 py-1.5 text-right text-xs font-medium text-slate-600">
+                      <td className="px-3 py-1.5 text-right text-xs font-medium text-stone-600">
                         {formatCurrency(item.total)}
                       </td>
                     </tr>
@@ -126,7 +126,7 @@ export function YearTable({
           })}
         </tbody>
         <tfoot>
-          <tr className="border-t border-slate-200 font-medium text-slate-900">
+          <tr className="border-t border-stone-200 font-medium text-stone-900">
             <td className="sticky left-0 bg-white px-3 py-2 text-left">Total</td>
             {monthTotals.map((value, i) => (
               <td key={i} className="px-2 py-2 text-right">

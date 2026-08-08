@@ -187,8 +187,8 @@ function SummaryCard({
   tone: "positive" | "negative";
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3">
-      <p className="text-xs text-slate-500">{label}</p>
+    <div className="rounded-xl border border-stone-200 bg-white p-3">
+      <p className="text-xs text-stone-500">{label}</p>
       <p
         className={`mt-1 text-sm font-semibold sm:text-base ${
           tone === "positive" ? "text-green-700" : "text-red-700"

@@ -56,13 +56,13 @@ export function EditPanel({
         onSubmit={handleSubmit}
         className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-5 sm:rounded-2xl"
       >
-        <p className="text-xs text-slate-400">Rå tekst fra banken</p>
-        <p className="mt-0.5 text-sm text-slate-700">{transaction.raw_text}</p>
+        <p className="text-xs text-stone-400">Rå tekst fra banken</p>
+        <p className="mt-0.5 text-sm text-stone-700">{transaction.raw_text}</p>
 
         <div className="mt-4">
           <label
             htmlFor="comment"
-            className="block text-sm font-medium text-slate-700"
+            className="block text-sm font-medium text-stone-700"
           >
             Kommentar
           </label>
@@ -71,14 +71,14 @@ export function EditPanel({
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder="Fx 'Stigs mobilabonnement'"
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+            className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
           />
         </div>
 
         <div className="mt-3">
           <label
             htmlFor="category"
-            className="block text-sm font-medium text-slate-700"
+            className="block text-sm font-medium text-stone-700"
           >
             Kategori
           </label>
@@ -86,7 +86,7 @@ export function EditPanel({
             id="category"
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+            className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
           >
             <option value="">Ingen kategori</option>
             {categories.map((c) => (
@@ -97,32 +97,32 @@ export function EditPanel({
           </select>
         </div>
 
-        <label className="mt-3 flex items-center gap-2 text-sm text-slate-700">
+        <label className="mt-3 flex items-center gap-2 text-sm text-stone-700">
           <input
             type="checkbox"
             checked={isExtraordinary}
             onChange={(e) => setIsExtraordinary(e.target.checked)}
-            className="h-4 w-4 rounded border-slate-300"
+            className="h-4 w-4 rounded border-stone-300"
           />
           Ekstraordinær postering
         </label>
 
-        <label className="mt-3 flex items-center gap-2 text-sm text-slate-700">
+        <label className="mt-3 flex items-center gap-2 text-sm text-stone-700">
           <input
             type="checkbox"
             checked={createRule}
             onChange={(e) => setCreateRule(e.target.checked)}
-            className="h-4 w-4 rounded border-slate-300"
+            className="h-4 w-4 rounded border-stone-300"
           />
           Anvend automatisk på lignende posteringer fremover?
         </label>
 
         {createRule && (
-          <div className="mt-3 space-y-3 rounded-lg bg-slate-50 p-3">
+          <div className="mt-3 space-y-3 rounded-lg bg-stone-100 p-3">
             <div>
               <label
                 htmlFor="matchPattern"
-                className="block text-xs font-medium text-slate-600"
+                className="block text-xs font-medium text-stone-600"
               >
                 Mønster
               </label>
@@ -131,13 +131,13 @@ export function EditPanel({
                 value={matchPattern}
                 onChange={(e) => setMatchPattern(e.target.value)}
                 required={createRule}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
               />
             </div>
             <div>
               <label
                 htmlFor="matchType"
-                className="block text-xs font-medium text-slate-600"
+                className="block text-xs font-medium text-stone-600"
               >
                 Match-type
               </label>
@@ -145,7 +145,7 @@ export function EditPanel({
                 id="matchType"
                 value={matchType}
                 onChange={(e) => setMatchType(e.target.value as MatchType)}
-                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+                className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
               >
                 <option value="prefix">Starter med (prefix)</option>
                 <option value="contains">Indeholder (contains)</option>
@@ -159,14 +159,14 @@ export function EditPanel({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="flex-1 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100"
           >
             Annuller
           </button>
           <button
             type="submit"
             disabled={isSaving}
-            className="flex-1 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+            className="flex-1 rounded-lg bg-forest-900 px-4 py-2 text-sm font-medium text-white hover:bg-forest-800 disabled:opacity-50"
           >
             {isSaving ? "Gemmer..." : "Gem"}
           </button>

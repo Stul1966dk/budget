@@ -18,20 +18,20 @@ export function ConfirmDialog({
   return (
     <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/30 sm:items-center">
       <div className="w-full max-w-sm rounded-t-2xl bg-white p-5 sm:rounded-2xl">
-        <h3 className="text-base font-semibold text-slate-900">{title}</h3>
-        <p className="mt-1 text-sm text-slate-600">{description}</p>
+        <h3 className="text-base font-semibold text-stone-900">{title}</h3>
+        <p className="mt-1 text-sm text-stone-600">{description}</p>
         <div className="mt-4 flex gap-2">
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="flex-1 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100"
           >
             {cancelLabel}
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="flex-1 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+            className="flex-1 rounded-lg bg-forest-900 px-4 py-2 text-sm font-medium text-white hover:bg-forest-800"
           >
             {confirmLabel}
           </button>

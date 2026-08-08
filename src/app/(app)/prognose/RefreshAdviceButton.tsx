@@ -26,7 +26,7 @@ export function RefreshAdviceButton() {
         type="button"
         onClick={handleClick}
         disabled={isRefreshing}
-        className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-100 disabled:opacity-50"
       >
         {isRefreshing ? "Genererer..." : "Opdater anbefaling"}
       </button>

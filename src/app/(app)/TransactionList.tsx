@@ -45,19 +45,19 @@ export function TransactionList({
   return (
     <div className="mt-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-900">Posteringer</h2>
+        <h2 className="text-sm font-semibold text-stone-900">Posteringer</h2>
         <a
           href={showOnlyUnmatched ? "?" : "?filter=umatchede"}
-          className="text-xs font-medium text-slate-500 underline hover:text-slate-900"
+          className="text-xs font-medium text-stone-500 underline hover:text-stone-900"
         >
           {showOnlyUnmatched ? "Vis alle" : "Vis kun ukategoriserede"}
         </a>
       </div>
 
       {transactions.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-400">Ingen posteringer at vise.</p>
+        <p className="mt-3 text-sm text-stone-400">Ingen posteringer at vise.</p>
       ) : (
-        <ul className="mt-2 divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <ul className="mt-2 divide-y divide-stone-100 overflow-hidden rounded-xl border border-stone-200 bg-white">
           {transactions.map((t) => {
             const category = t.category_id
               ? categoryMap.get(t.category_id)
@@ -69,10 +69,10 @@ export function TransactionList({
                 <button
                   type="button"
                   onClick={() => setEditingId(t.id)}
-                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-slate-50"
+                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-stone-100"
                 >
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                    <div className="flex items-center gap-2 text-xs text-stone-400">
                       <span className="whitespace-nowrap">
                         {formatDateDa(t.date)}
                       </span>
@@ -84,13 +84,13 @@ export function TransactionList({
                           {category.name}
                         </span>
                       ) : (
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+                        <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-500">
                           Ukategoriseret
                         </span>
                       )}
                     </div>
                     <p
-                      className="mt-0.5 truncate text-sm text-slate-900"
+                      className="mt-0.5 truncate text-sm text-stone-900"
                       title={t.raw_text}
                     >
                       {displayText}
@@ -98,7 +98,7 @@ export function TransactionList({
                   </div>
                   <span
                     className={`shrink-0 text-sm font-semibold ${
-                      t.amount < 0 ? "text-slate-900" : "text-green-700"
+                      t.amount < 0 ? "text-stone-900" : "text-green-700"
                     }`}
                   >
                     {formatCurrency(t.amount)}

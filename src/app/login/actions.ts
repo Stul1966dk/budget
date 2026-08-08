@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { isAllowedEmail } from "@/lib/auth/allowedEmails";
@@ -61,6 +62,46 @@ export async function requestMagicLink(
 
   return {
     status: "success",
-    message: `Vi har sendt et login-link til ${email}. Tjek din indbakke.`,
+    message: `Vi har sendt en login-kode til ${email}. Tjek din indbakke.`,
   };
+}
+
+const verifySchema = z.object({
+  email: z.string().trim().email(),
+  token: z
+    .string()
+    .trim()
+    .regex(/^\d{4,10}$/, "Koden skal være tal fra mailen."),
+});
+
+export async function verifyLoginCode(
+  _prevState: LoginState,
+  formData: FormData,
+): Promise<LoginState> {
+  const parsed = verifySchema.safeParse({
+    email: formData.get("email"),
+    token: formData.get("token"),
+  });
+
+  if (!parsed.success) {
+    return { status: "error", message: "Indtast koden fra mailen." };
+  }
+
+  const { email, token } = parsed.data;
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: "email",
+  });
+
+  if (error) {
+    console.error("verifyOtp fejlede:", error.code ?? error.status, error.message);
+    return {
+      status: "error",
+      message: "Koden er forkert eller udløbet. Prøv igen.",
+    };
+  }
+
+  redirect("/");
 }

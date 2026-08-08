@@ -72,15 +72,15 @@ export default async function PrognosePage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">
-      <h1 className="text-xl font-semibold text-slate-900">Rådgiver</h1>
-      <p className="mt-1 text-sm text-slate-500">
+      <h1 className="text-xl font-semibold text-stone-900">Rådgiver</h1>
+      <p className="mt-1 text-sm text-stone-500">
         Opsparingsrate, udgiftsprognose og kategori-trends baseret på jeres
         egne posteringer, med en kort AI-genereret anbefaling der opdateres
         ved hver ny upload.
       </p>
 
-      <div className="mt-4 inline-flex items-baseline gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3">
-        <span className="text-xs text-slate-500">Nuværende saldo</span>
+      <div className="mt-4 inline-flex items-baseline gap-2 rounded-xl border border-stone-200 bg-white px-4 py-3">
+        <span className="text-xs text-stone-500">Nuværende saldo</span>
         <span
           className={`text-base font-semibold ${
             currentBalance !== null && currentBalance >= 0
@@ -92,23 +92,23 @@ export default async function PrognosePage() {
         </span>
       </div>
 
-      <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+      <div className="mt-4 rounded-xl border border-stone-200 bg-white p-4">
         <div className="flex items-start justify-between gap-3">
-          <h2 className="text-sm font-semibold text-slate-900">Anbefaling</h2>
+          <h2 className="text-sm font-semibold text-stone-900">Anbefaling</h2>
           <RefreshAdviceButton />
         </div>
         {insight ? (
           <>
-            <p className="mt-3 whitespace-pre-line text-sm text-slate-700">
+            <p className="mt-3 whitespace-pre-line text-sm text-stone-700">
               {insight.content}
             </p>
-            <p className="mt-3 text-xs text-slate-400">
+            <p className="mt-3 text-xs text-stone-400">
               Genereret {formatDateDa(insight.created_at.slice(0, 10))} (
               {insight.model})
             </p>
           </>
         ) : (
-          <p className="mt-3 text-sm text-slate-400">
+          <p className="mt-3 text-sm text-stone-400">
             Ingen anbefaling endnu. Upload en CSV-fil, eller klik &quot;Opdater
             anbefaling&quot; for at generere en nu.
           </p>
@@ -116,14 +116,14 @@ export default async function PrognosePage() {
       </div>
 
       <section className="mt-6">
-        <h2 className="text-sm font-semibold text-slate-900">Opsparingsrate</h2>
+        <h2 className="text-sm font-semibold text-stone-900">Opsparingsrate</h2>
         {savings.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-400">Ingen data endnu.</p>
+          <p className="mt-2 text-sm text-stone-400">Ingen data endnu.</p>
         ) : (
-          <div className="mt-2 overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <div className="mt-2 overflow-x-auto rounded-xl border border-stone-200 bg-white">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="text-xs uppercase text-slate-400">
+                <tr className="text-xs uppercase text-stone-400">
                   <th className="px-4 py-2 font-medium">Måned</th>
                   <th className="px-4 py-2 text-right font-medium">Indtægt</th>
                   <th className="px-4 py-2 text-right font-medium">Udgifter</th>
@@ -133,8 +133,8 @@ export default async function PrognosePage() {
               </thead>
               <tbody>
                 {savings.map((s) => (
-                  <tr key={s.monthKey} className="border-t border-slate-100">
-                    <td className="px-4 py-2 text-slate-900">
+                  <tr key={s.monthKey} className="border-t border-stone-100">
+                    <td className="px-4 py-2 text-stone-900">
                       {formatMonthDa(s.monthKey)}
                     </td>
                     <td className="px-4 py-2 text-right text-green-700">
@@ -150,7 +150,7 @@ export default async function PrognosePage() {
                     >
                       {formatCurrency(s.result)}
                     </td>
-                    <td className="px-4 py-2 text-right text-slate-700">
+                    <td className="px-4 py-2 text-right text-stone-700">
                       {formatCurrency(s.savings)}
                     </td>
                   </tr>
@@ -162,7 +162,7 @@ export default async function PrognosePage() {
       </section>
 
       <section className="mt-6">
-        <h2 className="text-sm font-semibold text-slate-900">
+        <h2 className="text-sm font-semibold text-stone-900">
           Prognose - næste {forecast.length} måneder
         </h2>
         <IncomeOverrideForm
@@ -170,12 +170,12 @@ export default async function PrognosePage() {
           autoDetectedValue={autoDetectedIncome}
         />
         {forecast.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-400">Ingen data endnu.</p>
+          <p className="mt-2 text-sm text-stone-400">Ingen data endnu.</p>
         ) : (
-          <div className="mt-2 overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <div className="mt-2 overflow-x-auto rounded-xl border border-stone-200 bg-white">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="text-xs uppercase text-slate-400">
+                <tr className="text-xs uppercase text-stone-400">
                   <th className="px-4 py-2 font-medium">Måned</th>
                   <th className="px-4 py-2 text-right font-medium">
                     Indbetaling
@@ -193,17 +193,17 @@ export default async function PrognosePage() {
               </thead>
               <tbody>
                 {forecast.map((f) => (
-                  <tr key={f.monthKey} className="border-t border-slate-100">
-                    <td className="px-4 py-2 text-slate-900">
+                  <tr key={f.monthKey} className="border-t border-stone-100">
+                    <td className="px-4 py-2 text-stone-900">
                       {formatMonthDa(f.monthKey)}
                     </td>
                     <td className="px-4 py-2 text-right text-green-700">
                       {formatCurrency(f.recurringIncome)}
                     </td>
-                    <td className="px-4 py-2 text-right text-slate-700">
+                    <td className="px-4 py-2 text-right text-stone-700">
                       {formatCurrency(f.recurringTotal)}
                     </td>
-                    <td className="px-4 py-2 text-right text-slate-700">
+                    <td className="px-4 py-2 text-right text-stone-700">
                       {formatCurrency(f.averageUnmappedTotal)}
                     </td>
                     <td
@@ -217,8 +217,8 @@ export default async function PrognosePage() {
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t border-slate-200 bg-slate-50">
-                  <td className="px-4 py-2 font-medium text-slate-900" colSpan={4}>
+                <tr className="border-t border-stone-200 bg-stone-100">
+                  <td className="px-4 py-2 font-medium text-stone-900" colSpan={4}>
                     Samlet forventet nettoresultat over {forecast.length} måneder
                   </td>
                   <td
@@ -233,7 +233,7 @@ export default async function PrognosePage() {
             </table>
           </div>
         )}
-        <p className="mt-2 text-xs text-slate-400">
+        <p className="mt-2 text-xs text-stone-400">
           Indbetaling og faste udgifter er projiceret ud fra jeres
           mapping-regler, hver på det interval de faktisk plejer at optræde
           med - månedligt, kvartalsvist, halvårligt osv. En post der kun er
@@ -245,20 +245,20 @@ export default async function PrognosePage() {
       </section>
 
       <section className="mt-6">
-        <h2 className="text-sm font-semibold text-slate-900">Kategori-trends</h2>
+        <h2 className="text-sm font-semibold text-stone-900">Kategori-trends</h2>
         {trends.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-stone-400">
             Ingen kategorier viser en tydelig stigende eller faldende trend
             endnu.
           </p>
         ) : (
-          <ul className="mt-2 divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <ul className="mt-2 divide-y divide-stone-100 overflow-hidden rounded-xl border border-stone-200 bg-white">
             {trends.map((t) => (
               <li
                 key={t.categoryId}
                 className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
               >
-                <span className="text-slate-900">{t.categoryName}</span>
+                <span className="text-stone-900">{t.categoryName}</span>
                 <span
                   className={`font-medium ${
                     t.direction === "increasing" ? "text-red-600" : "text-green-700"

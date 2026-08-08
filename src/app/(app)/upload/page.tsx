@@ -47,10 +47,10 @@ export default function UploadPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">
-      <h1 className="text-xl font-semibold text-slate-900">
+      <h1 className="text-xl font-semibold text-stone-900">
         Upload posteringer
       </h1>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-stone-500">
         Vælg en CSV-eksport fra Danske Bank. Du ser en forhåndsvisning af de
         parsede værdier, før noget importeres.
       </p>
@@ -66,14 +66,14 @@ export default function UploadPage() {
           onDrop={handleDrop}
           className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-10 text-center transition ${
             isDraggingOver
-              ? "border-slate-500 bg-slate-100"
-              : "border-slate-300 bg-white hover:border-slate-400"
+              ? "border-stone-500 bg-stone-100"
+              : "border-stone-300 bg-white hover:border-stone-400"
           }`}
         >
-          <span className="text-sm font-medium text-slate-700">
+          <span className="text-sm font-medium text-stone-700">
             {fileName ?? "Klik for at vælge en fil, eller træk den hertil"}
           </span>
-          <span className="mt-1 text-xs text-slate-400">
+          <span className="mt-1 text-xs text-stone-400">
             CSV-fil fra Danske Bank
           </span>
           <input
@@ -92,8 +92,8 @@ export default function UploadPage() {
         </label>
 
         {preview && (
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <p className="text-sm text-slate-600">
+          <div className="rounded-xl border border-stone-200 bg-white p-4">
+            <p className="text-sm text-stone-600">
               {preview.rows.length} rækker fundet
               {preview.errors.length > 0 &&
                 `, ${preview.errors.length} kunne ikke læses`}
@@ -113,7 +113,7 @@ export default function UploadPage() {
             <div className="mt-3 overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="text-xs uppercase text-slate-400">
+                  <tr className="text-xs uppercase text-stone-400">
                     <th className="py-1 pr-3 font-medium">Dato</th>
                     <th className="py-1 pr-3 font-medium">Tekst</th>
                     <th className="py-1 pr-3 text-right font-medium">
@@ -124,17 +124,17 @@ export default function UploadPage() {
                 </thead>
                 <tbody>
                   {preview.rows.slice(0, PREVIEW_ROW_LIMIT).map((row) => (
-                    <tr key={row.rowHash} className="border-t border-slate-100">
-                      <td className="whitespace-nowrap py-1.5 pr-3 text-slate-600">
+                    <tr key={row.rowHash} className="border-t border-stone-100">
+                      <td className="whitespace-nowrap py-1.5 pr-3 text-stone-600">
                         {formatDateDa(row.date)}
                       </td>
-                      <td className="py-1.5 pr-3 text-slate-900">
+                      <td className="py-1.5 pr-3 text-stone-900">
                         {row.rawText}
                       </td>
                       <td className="whitespace-nowrap py-1.5 pr-3 text-right">
                         {formatCurrency(row.amount)}
                       </td>
-                      <td className="whitespace-nowrap py-1.5 text-right text-slate-500">
+                      <td className="whitespace-nowrap py-1.5 text-right text-stone-500">
                         {row.balance !== null
                           ? formatCurrency(row.balance)
                           : "–"}
@@ -145,7 +145,7 @@ export default function UploadPage() {
               </table>
             </div>
             {preview.rows.length > PREVIEW_ROW_LIMIT && (
-              <p className="mt-2 text-xs text-slate-400">
+              <p className="mt-2 text-xs text-stone-400">
                 ... og {preview.rows.length - PREVIEW_ROW_LIMIT} flere rækker
               </p>
             )}
@@ -155,7 +155,7 @@ export default function UploadPage() {
         <button
           type="submit"
           disabled={!preview || preview.rows.length === 0 || isPending}
-          className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50"
+          className="w-full rounded-lg bg-forest-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-forest-800 disabled:opacity-50"
         >
           {isPending ? "Importerer..." : "Importér"}
         </button>
