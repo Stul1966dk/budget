@@ -30,6 +30,7 @@ export type TransactionRow = {
   category_id: string | null;
   is_extraordinary: boolean;
   mapping_id: string | null;
+  import_seq: number;
   created_at: string;
 };
 

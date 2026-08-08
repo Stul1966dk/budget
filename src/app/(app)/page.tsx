@@ -44,7 +44,8 @@ export default async function DashboardPage({
       .select("*")
       .gte("date", start)
       .lte("date", end)
-      .order("date", { ascending: true }),
+      .order("date", { ascending: true })
+      .order("import_seq", { ascending: true }),
     supabase.from("transactions").select("date").order("date", { ascending: false }),
     supabase
       .from("alerts")

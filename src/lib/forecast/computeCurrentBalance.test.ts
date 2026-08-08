@@ -18,6 +18,7 @@ function makeTx(overrides: Partial<TransactionRow>): TransactionRow {
     category_id: null,
     is_extraordinary: false,
     mapping_id: null,
+    import_seq: counter,
     created_at: "2026-01-01T00:00:00Z",
     ...overrides,
   };
@@ -54,5 +55,28 @@ describe("computeCurrentBalance", () => {
   it("returnerer null uden posteringer med saldo", () => {
     expect(computeCurrentBalance([])).toBeNull();
     expect(computeCurrentBalance([makeTx({ balance: null })])).toBeNull();
+  });
+
+  it("bruger import_seq til at afgøre den seneste postering, når flere deler samme dato", () => {
+    // Danske Bank-CSV'en har kun dato, ikke klokkeslæt - flere posteringer
+    // samme dag kan derfor kun skelnes ved deres rækkefølge i filen.
+    const transactions = [
+      makeTx({ date: "2026-08-03", balance: 5000, import_seq: 1 }),
+      makeTx({ date: "2026-08-03", balance: 3000, import_seq: 2 }),
+      makeTx({ date: "2026-08-03", balance: 14913.25, import_seq: 3 }),
+      makeTx({ date: "2026-08-03", balance: -1169.75, import_seq: 4 }),
+    ];
+
+    expect(computeCurrentBalance(transactions)).toBe(-1169.75);
+  });
+
+  it("er uafhængig af hentnings-rækkefølgen, selv med flere posteringer samme dag", () => {
+    const transactions = [
+      makeTx({ date: "2026-08-03", balance: -1169.75, import_seq: 4 }),
+      makeTx({ date: "2026-08-03", balance: 14913.25, import_seq: 3 }),
+      makeTx({ date: "2026-08-03", balance: 5000, import_seq: 1 }),
+    ];
+
+    expect(computeCurrentBalance(transactions)).toBe(-1169.75);
   });
 });

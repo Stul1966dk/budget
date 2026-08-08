@@ -22,6 +22,7 @@ function makeTx(overrides: Partial<TransactionRow>): TransactionRow {
     category_id: null,
     is_extraordinary: false,
     mapping_id: null,
+    import_seq: counter,
     created_at: "2026-01-01T00:00:00Z",
     ...overrides,
   };
