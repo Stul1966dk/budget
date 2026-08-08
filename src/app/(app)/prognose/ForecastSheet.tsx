@@ -27,7 +27,7 @@ export function ForecastSheet({
   const otherExpenseRow = monthKeys.map(() => otherExpenseAverage);
 
   return (
-    <div className="mt-3 overflow-x-auto rounded-xl border border-stone-200 bg-white">
+    <div className="mt-2 overflow-x-auto rounded-xl border border-stone-200 bg-white">
       <table className="w-full min-w-[720px] text-sm">
         <thead>
           <tr className="border-b border-stone-200 text-xs uppercase text-stone-400">
@@ -176,8 +176,8 @@ function TotalRow({
   const textClass = tone === "income" ? "text-green-700" : "text-red-700";
 
   return (
-    <tr className="border-b border-stone-200 bg-stone-100/60 font-medium">
-      <td className="sticky left-0 bg-stone-100/60 px-3 py-2 text-left text-stone-900">
+    <tr className="border-b border-stone-200 bg-stone-100 font-medium">
+      <td className="sticky left-0 bg-stone-100 px-3 py-2 text-left text-stone-900">
         {label}
       </td>
       {values.map((value, i) => (

@@ -113,18 +113,21 @@ export default function UploadPage() {
             <div className="mt-3 overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="text-xs uppercase text-stone-400">
-                    <th className="py-1 pr-3 font-medium">Dato</th>
-                    <th className="py-1 pr-3 font-medium">Tekst</th>
-                    <th className="py-1 pr-3 text-right font-medium">
+                  <tr className="border-b border-stone-200 text-xs uppercase text-stone-400">
+                    <th className="py-2 pr-3 font-medium">Dato</th>
+                    <th className="py-2 pr-3 font-medium">Tekst</th>
+                    <th className="py-2 pr-3 text-right font-medium">
                       Beløb
                     </th>
-                    <th className="py-1 text-right font-medium">Saldo</th>
+                    <th className="py-2 text-right font-medium">Saldo</th>
                   </tr>
                 </thead>
                 <tbody>
                   {preview.rows.slice(0, PREVIEW_ROW_LIMIT).map((row) => (
-                    <tr key={row.rowHash} className="border-t border-stone-100">
+                    <tr
+                      key={row.rowHash}
+                      className="border-b border-stone-100 last:border-0"
+                    >
                       <td className="whitespace-nowrap py-1.5 pr-3 text-stone-600">
                         {formatDateDa(row.date)}
                       </td>

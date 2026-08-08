@@ -147,34 +147,34 @@ export default async function PrognosePage({
           <div className="mt-2 overflow-x-auto rounded-xl border border-stone-200 bg-white">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="text-xs uppercase text-stone-400">
-                  <th className="px-4 py-2 font-medium">Måned</th>
-                  <th className="px-4 py-2 text-right font-medium">Indtægt</th>
-                  <th className="px-4 py-2 text-right font-medium">Udgifter</th>
-                  <th className="px-4 py-2 text-right font-medium">Resultat</th>
-                  <th className="px-4 py-2 text-right font-medium">Opsparing</th>
+                <tr className="border-b border-stone-200 text-xs uppercase text-stone-400">
+                  <th className="px-3 py-2 font-medium">Måned</th>
+                  <th className="px-2 py-2 text-right font-medium">Indtægt</th>
+                  <th className="px-2 py-2 text-right font-medium">Udgifter</th>
+                  <th className="px-2 py-2 text-right font-medium">Resultat</th>
+                  <th className="px-3 py-2 text-right font-medium">Opsparing</th>
                 </tr>
               </thead>
               <tbody>
                 {savings.map((s) => (
-                  <tr key={s.monthKey} className="border-t border-stone-100">
-                    <td className="px-4 py-2 text-stone-900">
+                  <tr key={s.monthKey} className="border-b border-stone-100 last:border-0">
+                    <td className="px-3 py-2 text-stone-900">
                       {formatMonthDa(s.monthKey)}
                     </td>
-                    <td className="px-4 py-2 text-right text-green-700">
+                    <td className="px-2 py-2 text-right text-green-700">
                       {formatCurrency(s.income)}
                     </td>
-                    <td className="px-4 py-2 text-right text-red-700">
+                    <td className="px-2 py-2 text-right text-red-700">
                       {formatCurrency(s.expenses)}
                     </td>
                     <td
-                      className={`px-4 py-2 text-right font-medium ${
+                      className={`px-2 py-2 text-right font-medium ${
                         s.result >= 0 ? "text-green-700" : "text-red-700"
                       }`}
                     >
                       {formatCurrency(s.result)}
                     </td>
-                    <td className="px-4 py-2 text-right text-stone-700">
+                    <td className="px-3 py-2 text-right text-stone-700">
                       {formatCurrency(s.savings)}
                     </td>
                   </tr>
