@@ -59,8 +59,8 @@ export async function updateMappingRule(
   }
 
   revalidatePath("/");
+  revalidatePath("/maaned");
   revalidatePath("/regler");
-  revalidatePath("/aar");
   revalidatePath("/prognose");
   return { status: "success" };
 }

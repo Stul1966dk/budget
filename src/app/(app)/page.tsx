@@ -1,202 +1,143 @@
 import { createClient } from "@/lib/supabase/server";
-import {
-  extractMonthKey,
-  getCurrentMonthKey,
-  monthKeyToDateRange,
-} from "@/lib/month";
-import { formatCurrency } from "@/lib/format";
-import type { AlertRow, Category, TransactionRow } from "@/lib/types/db";
-import { MonthSelector } from "./MonthSelector";
-import { CategoryBreakdown } from "./CategoryBreakdown";
-import { TransactionList } from "./TransactionList";
-import { AlertsPanel } from "./AlertsPanel";
+import type { Category, TransactionRow } from "@/lib/types/db";
+import { YearSelector } from "./aar/YearSelector";
+import { YearTable, type YearTableCategory } from "./aar/YearTable";
 
-export default async function DashboardPage({
+type YearTransaction = Pick<
+  TransactionRow,
+  "date" | "amount" | "category_id" | "is_extraordinary" | "raw_text" | "comment" | "mapping_id"
+>;
+
+export default async function AarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; filter?: string }>;
+  searchParams: Promise<{ year?: string }>;
 }) {
   const params = await searchParams;
   const supabase = await createClient();
 
-  let monthKey = params.month;
-  if (!monthKey) {
+  let year = params.year ? Number(params.year) : NaN;
+  if (!Number.isFinite(year)) {
     const { data: latest } = await supabase
       .from("transactions")
       .select("date")
       .order("date", { ascending: false })
       .limit(1)
       .maybeSingle();
-    monthKey = latest ? extractMonthKey(latest.date) : getCurrentMonthKey();
+    year = latest ? Number(latest.date.slice(0, 4)) : new Date().getFullYear();
   }
 
-  const { start, end } = monthKeyToDateRange(monthKey);
+  const start = `${year}-01-01`;
+  const end = `${year}-12-31`;
 
-  const [
-    { data: categoriesData },
-    { data: transactionsData },
-    { data: monthsData },
-    { data: alertsData },
-  ] = await Promise.all([
+  const [{ data: categoriesData }, { data: transactionsData }] = await Promise.all([
     supabase.from("categories").select("*").order("sort_order"),
     supabase
       .from("transactions")
-      .select("*")
+      .select("date, amount, category_id, is_extraordinary, raw_text, comment, mapping_id")
       .gte("date", start)
       .lte("date", end)
-      .order("date", { ascending: true })
-      .order("import_seq", { ascending: true }),
-    supabase.from("transactions").select("date").order("date", { ascending: false }),
-    supabase
-      .from("alerts")
-      .select("*")
-      .eq("acknowledged", false)
-      .order("created_at", { ascending: false }),
+      .eq("is_extraordinary", false),
   ]);
 
   const categories = (categoriesData ?? []) as Category[];
-  const allTransactions = (transactionsData ?? []) as TransactionRow[];
-  const alerts = (alertsData ?? []) as AlertRow[];
-
-  const availableMonths = Array.from(
-    new Set((monthsData ?? []).map((r) => extractMonthKey(r.date))),
-  );
-  if (!availableMonths.includes(monthKey)) availableMonths.push(monthKey);
-  availableMonths.sort().reverse();
-
-  const showOnlyUnmatched = params.filter === "umatchede";
-
-  const ordinary = allTransactions.filter((t) => !t.is_extraordinary);
-  const extraordinary = allTransactions.filter((t) => t.is_extraordinary);
-
-  const income = ordinary
-    .filter((t) => t.amount > 0)
-    .reduce((sum, t) => sum + t.amount, 0);
-  const expenses = ordinary
-    .filter((t) => t.amount < 0)
-    .reduce((sum, t) => sum + t.amount, 0);
-  const result = income + expenses;
-  const extraordinaryTotal = extraordinary.reduce((sum, t) => sum + t.amount, 0);
-
+  const transactions = (transactionsData ?? []) as YearTransaction[];
   const categoryMap = new Map(categories.map((c) => [c.id, c]));
-  const expenseTotal = Math.abs(expenses) || 1;
 
-  const categoryTotals = new Map<string, number>();
-  for (const t of ordinary) {
-    if (t.amount >= 0) continue;
-    const key = t.category_id ?? "none";
-    categoryTotals.set(key, (categoryTotals.get(key) ?? 0) + Math.abs(t.amount));
+  const categoryGrid = new Map<string, number[]>();
+  const itemGrid = new Map<string, Map<string, { label: string; months: number[] }>>();
+
+  function bucket(map: Map<string, number[]>, key: string): number[] {
+    let months = map.get(key);
+    if (!months) {
+      months = new Array(12).fill(0);
+      map.set(key, months);
+    }
+    return months;
   }
 
-  const categoryBreakdown = Array.from(categoryTotals.entries())
-    .map(([key, sum]) => ({
-      id: key,
-      name:
-        key === "none" ? "Ukategoriseret" : categoryMap.get(key)?.name ?? "Ukendt",
-      color:
-        key === "none" ? "#94a3b8" : categoryMap.get(key)?.color ?? "#94a3b8",
-      sum,
-      share: sum / expenseTotal,
-    }))
-    .sort((a, b) => b.sum - a.sum);
+  for (const t of transactions) {
+    if (t.amount >= 0) continue; // årsoversigten viser kun udgifter
+    const monthIndex = Number(t.date.slice(5, 7)) - 1;
+    const categoryKey = t.category_id ?? "none";
+    const amount = Math.abs(t.amount);
 
-  const visibleTransactions = showOnlyUnmatched
-    ? allTransactions.filter((t) => t.category_id === null)
-    : allTransactions;
+    bucket(categoryGrid, categoryKey)[monthIndex] += amount;
 
-  const transactionsWithBalance = allTransactions.filter(
-    (t): t is TransactionRow & { balance: number } => t.balance !== null,
-  );
-  const endOfPeriodBalance = transactionsWithBalance.at(-1)?.balance ?? null;
-  const lowestBalanceInPeriod =
-    transactionsWithBalance.length > 0
-      ? Math.min(...transactionsWithBalance.map((t) => t.balance))
-      : null;
-  const dippedNegative =
-    lowestBalanceInPeriod !== null &&
-    lowestBalanceInPeriod < 0 &&
-    lowestBalanceInPeriod !== endOfPeriodBalance;
+    if (!itemGrid.has(categoryKey)) itemGrid.set(categoryKey, new Map());
+    const items = itemGrid.get(categoryKey)!;
+    const itemKey = t.mapping_id ?? t.raw_text;
+    if (!items.has(itemKey)) {
+      items.set(itemKey, { label: t.comment ?? t.raw_text, months: new Array(12).fill(0) });
+    }
+    items.get(itemKey)!.months[monthIndex] += amount;
+  }
+
+  const rows: YearTableCategory[] = Array.from(categoryGrid.entries())
+    .map(([key, months]) => {
+      // To forskellige mapping-regler kan pege på samme tekst (fx hvis en
+      // regel er oprettet to gange for samme post) - de skal vises som én
+      // række, ikke splittes ud efter internt regel-id.
+      const mergedByLabel = new Map<string, number[]>();
+      for (const { label, months: itemMonths } of (
+        itemGrid.get(key) ?? new Map<string, { label: string; months: number[] }>()
+      ).values()) {
+        const existing = mergedByLabel.get(label);
+        if (existing) {
+          itemMonths.forEach((v, i) => {
+            existing[i] += v;
+          });
+        } else {
+          mergedByLabel.set(label, [...itemMonths]);
+        }
+      }
+
+      const items = Array.from(mergedByLabel.entries())
+        .map(([label, itemMonths]) => ({
+          key: label,
+          label,
+          months: itemMonths,
+          total: itemMonths.reduce((sum, v) => sum + v, 0),
+        }))
+        .sort((a, b) => b.total - a.total);
+
+      return {
+        key,
+        name:
+          key === "none" ? "Ukategoriseret" : categoryMap.get(key)?.name ?? "Ukendt",
+        months,
+        total: months.reduce((sum, v) => sum + v, 0),
+        items,
+      };
+    })
+    .sort((a, b) => b.total - a.total);
+
+  const monthTotals = new Array(12).fill(0);
+  for (const row of rows) {
+    row.months.forEach((value, i) => {
+      monthTotals[i] += value;
+    });
+  }
+  const grandTotal = monthTotals.reduce((sum, v) => sum + v, 0);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6">
-      <AlertsPanel alerts={alerts} />
-      <MonthSelector currentMonth={monthKey} availableMonths={availableMonths} />
-
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <SummaryCard label="Indtægter" value={income} tone="positive" />
-        <SummaryCard label="Udgifter" value={expenses} tone="negative" />
-        <SummaryCard
-          label="Resultat"
-          value={result}
-          tone={result >= 0 ? "positive" : "negative"}
-        />
-        {endOfPeriodBalance !== null && (
-          <SummaryCard
-            label="Saldo"
-            value={endOfPeriodBalance}
-            tone={endOfPeriodBalance >= 0 ? "positive" : "negative"}
-          />
-        )}
+    <div className="mx-auto max-w-5xl px-4 py-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-stone-900">Årsoversigt</h1>
+        <YearSelector year={year} />
       </div>
-
-      {dippedNegative && (
-        <p className="mt-2 text-xs text-red-600">
-          Saldoen har været i minus i perioden (laveste: {formatCurrency(lowestBalanceInPeriod!)}
-          ).
-        </p>
-      )}
-
-      {extraordinary.length > 0 && (
-        <details className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          <summary className="cursor-pointer font-medium">
-            Ekstraordinære poster: {formatCurrency(extraordinaryTotal)} (
-            {extraordinary.length})
-          </summary>
-          <ul className="mt-2 space-y-1">
-            {extraordinary.map((t) => (
-              <li key={t.id} className="flex justify-between gap-2">
-                <span className="truncate">{t.comment ?? t.raw_text}</span>
-                <span className="whitespace-nowrap">
-                  {formatCurrency(t.amount)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
-
-      {categoryBreakdown.length > 0 && (
-        <CategoryBreakdown items={categoryBreakdown} />
-      )}
-
-      <TransactionList
-        transactions={visibleTransactions}
-        categories={categories}
-        showOnlyUnmatched={showOnlyUnmatched}
-      />
-    </div>
-  );
-}
-
-function SummaryCard({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone: "positive" | "negative";
-}) {
-  return (
-    <div className="rounded-xl border border-stone-200 bg-white p-3">
-      <p className="text-xs text-stone-500">{label}</p>
-      <p
-        className={`mt-1 text-sm font-semibold sm:text-base ${
-          tone === "positive" ? "text-green-700" : "text-red-700"
-        }`}
-      >
-        {formatCurrency(value)}
+      <p className="mt-1 text-sm text-stone-500">
+        Udgifter pr. kategori og måned for {year} (ekskl. ekstraordinære
+        poster). Klik på en kategori for at se de enkelte poster.
       </p>
+
+      {rows.length === 0 ? (
+        <p className="mt-6 text-sm text-stone-400">
+          Ingen posteringer for {year}.
+        </p>
+      ) : (
+        <YearTable rows={rows} monthTotals={monthTotals} grandTotal={grandTotal} />
+      )}
     </div>
   );
 }

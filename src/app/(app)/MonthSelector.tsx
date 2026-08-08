@@ -14,7 +14,7 @@ export function MonthSelector({
   const router = useRouter();
 
   function go(month: string) {
-    router.push(`/?month=${month}`);
+    router.push(`/maaned?month=${month}`);
   }
 
   return (

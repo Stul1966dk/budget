@@ -183,7 +183,7 @@ export default function UploadPage() {
               )}
               {(result.rowsImported ?? 0) > 0 && (
                 <Link
-                  href="/?filter=umatchede"
+                  href="/maaned?filter=umatchede"
                   className="mt-2 inline-block font-medium underline"
                 >
                   Gennemgå nye umatchede posteringer

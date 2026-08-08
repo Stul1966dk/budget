@@ -5,11 +5,11 @@ import { usePathname } from "next/navigation";
 import { signOut } from "@/lib/auth/signOut";
 
 const LINKS = [
-  { href: "/", label: "Oversigt" },
+  { href: "/", label: "År" },
+  { href: "/maaned", label: "Oversigt" },
   { href: "/upload", label: "Upload" },
   { href: "/regler", label: "Regler" },
   { href: "/prognose", label: "Rådgiver" },
-  { href: "/aar", label: "År" },
 ];
 
 export function NavBar() {
