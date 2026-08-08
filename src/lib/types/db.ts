@@ -50,6 +50,7 @@ export type AlertRow = {
   previous_amount: number | null;
   new_amount: number | null;
   month_key: string;
+  typical_day: number | null;
   acknowledged: boolean;
   created_at: string;
 };

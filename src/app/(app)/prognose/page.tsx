@@ -1,11 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { computeSavingsRate } from "@/lib/forecast/computeSavingsRate";
-import { computeExpenseForecast } from "@/lib/forecast/computeExpenseForecast";
+import { computeForecastLineItems } from "@/lib/forecast/computeForecastLineItems";
 import { computeCategoryTrends } from "@/lib/forecast/computeCategoryTrends";
 import { computeCurrentBalance } from "@/lib/forecast/computeCurrentBalance";
-import { applyIncomeOverride } from "@/lib/forecast/applyIncomeOverride";
 import { extractMonthKey, getCurrentMonthKey } from "@/lib/month";
-import { formatCurrency, formatDateDa, formatMonthDa } from "@/lib/format";
+import { formatCurrency, formatMonthDa, formatDateDa } from "@/lib/format";
 import type {
   AdvisorInsightRow,
   Category,
@@ -15,8 +14,25 @@ import type {
 } from "@/lib/types/db";
 import { RefreshAdviceButton } from "./RefreshAdviceButton";
 import { IncomeOverrideForm } from "./IncomeOverrideForm";
+import { ForecastRangeSelector } from "./ForecastRangeSelector";
+import { ForecastSheet } from "./ForecastSheet";
 
-export default async function PrognosePage() {
+const MIN_FORECAST_MONTHS = 1;
+const MAX_FORECAST_MONTHS = 36;
+const DEFAULT_FORECAST_MONTHS = 12;
+
+export default async function PrognosePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ months?: string }>;
+}) {
+  const params = await searchParams;
+  const parsedMonths = Number(params.months);
+  const monthsAhead =
+    Number.isFinite(parsedMonths) && parsedMonths > 0
+      ? Math.min(MAX_FORECAST_MONTHS, Math.max(MIN_FORECAST_MONTHS, Math.round(parsedMonths)))
+      : DEFAULT_FORECAST_MONTHS;
+
   const supabase = await createClient();
 
   const [
@@ -35,7 +51,9 @@ export default async function PrognosePage() {
       .limit(1)
       .maybeSingle(),
     supabase.from("forecast_settings").select("*").limit(1).maybeSingle(),
-    supabase.from("text_mappings").select("id, active"),
+    supabase
+      .from("text_mappings")
+      .select("id, comment, match_pattern, category_id, active"),
   ]);
 
   const transactions = (transactionsData ?? []) as TransactionRow[];
@@ -43,10 +61,12 @@ export default async function PrognosePage() {
   const insight = (insightData ?? null) as AdvisorInsightRow | null;
   const settings = (settingsData ?? null) as ForecastSettingsRow | null;
   const incomeOverride = settings?.monthly_income_override ?? null;
+  const mappings = (mappingsData ?? []) as Pick<
+    TextMappingRow,
+    "id" | "comment" | "match_pattern" | "category_id" | "active"
+  >[];
   const discontinuedMappingIds = new Set(
-    ((mappingsData ?? []) as Pick<TextMappingRow, "id" | "active">[])
-      .filter((m) => !m.active)
-      .map((m) => m.id),
+    mappings.filter((m) => !m.active).map((m) => m.id),
   );
 
   const latestMonthKey =
@@ -57,15 +77,19 @@ export default async function PrognosePage() {
 
   const currentBalance = computeCurrentBalance(transactions);
   const savings = computeSavingsRate(transactions, categories);
-  const rawForecast = computeExpenseForecast(
+  const sheet = computeForecastLineItems(
     transactions,
+    mappings,
     latestMonthKey,
-    12,
+    monthsAhead,
     discontinuedMappingIds,
   );
-  const autoDetectedIncome = rawForecast[0]?.recurringIncome ?? 0;
-  const forecast = applyIncomeOverride(rawForecast, incomeOverride);
-  const forecastNetTotal = forecast.reduce((sum, f) => sum + f.projectedNetResult, 0);
+  const autoDetectedIncome = sheet.incomeTotals[0] ?? 0;
+  const incomeTotals =
+    incomeOverride !== null
+      ? sheet.monthKeys.map(() => incomeOverride)
+      : sheet.incomeTotals;
+  const netTotals = incomeTotals.map((income, i) => income - sheet.expenseTotals[i]);
   const trends = computeCategoryTrends(transactions, categories).filter(
     (t) => t.direction !== "stable",
   );
@@ -163,84 +187,34 @@ export default async function PrognosePage() {
 
       <section className="mt-6">
         <h2 className="text-sm font-semibold text-stone-900">
-          Prognose - næste {forecast.length} måneder
+          Prognose - næste {sheet.monthKeys.length} måneder
         </h2>
+        <ForecastRangeSelector months={monthsAhead} />
         <IncomeOverrideForm
           overrideValue={incomeOverride}
           autoDetectedValue={autoDetectedIncome}
         />
-        {forecast.length === 0 ? (
+        {sheet.monthKeys.length === 0 ? (
           <p className="mt-2 text-sm text-stone-400">Ingen data endnu.</p>
         ) : (
-          <div className="mt-2 overflow-x-auto rounded-xl border border-stone-200 bg-white">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="text-xs uppercase text-stone-400">
-                  <th className="px-4 py-2 font-medium">Måned</th>
-                  <th className="px-4 py-2 text-right font-medium">
-                    Indbetaling
-                  </th>
-                  <th className="px-4 py-2 text-right font-medium">
-                    Faste udgifter
-                  </th>
-                  <th className="px-4 py-2 text-right font-medium">
-                    Øvrige (gns.)
-                  </th>
-                  <th className="px-4 py-2 text-right font-medium">
-                    Nettoresultat
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {forecast.map((f) => (
-                  <tr key={f.monthKey} className="border-t border-stone-100">
-                    <td className="px-4 py-2 text-stone-900">
-                      {formatMonthDa(f.monthKey)}
-                    </td>
-                    <td className="px-4 py-2 text-right text-green-700">
-                      {formatCurrency(f.recurringIncome)}
-                    </td>
-                    <td className="px-4 py-2 text-right text-stone-700">
-                      {formatCurrency(f.recurringTotal)}
-                    </td>
-                    <td className="px-4 py-2 text-right text-stone-700">
-                      {formatCurrency(f.averageUnmappedTotal)}
-                    </td>
-                    <td
-                      className={`px-4 py-2 text-right font-medium ${
-                        f.projectedNetResult >= 0 ? "text-green-700" : "text-red-700"
-                      }`}
-                    >
-                      {formatCurrency(f.projectedNetResult)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t border-stone-200 bg-stone-100">
-                  <td className="px-4 py-2 font-medium text-stone-900" colSpan={4}>
-                    Samlet forventet nettoresultat over {forecast.length} måneder
-                  </td>
-                  <td
-                    className={`px-4 py-2 text-right font-semibold ${
-                      forecastNetTotal >= 0 ? "text-green-700" : "text-red-700"
-                    }`}
-                  >
-                    {formatCurrency(forecastNetTotal)}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+          <ForecastSheet
+            monthKeys={sheet.monthKeys}
+            incomeItems={sheet.incomeItems}
+            expenseItems={sheet.expenseItems}
+            otherExpenseAverage={sheet.otherExpenseAverage}
+            incomeTotals={incomeTotals}
+            expenseTotals={sheet.expenseTotals}
+            netTotals={netTotals}
+            incomeIsOverridden={incomeOverride !== null}
+          />
         )}
         <p className="mt-2 text-xs text-stone-400">
-          Indbetaling og faste udgifter er projiceret ud fra jeres
-          mapping-regler, hver på det interval de faktisk plejer at optræde
-          med - månedligt, kvartalsvist, halvårligt osv. En post der kun er
-          set én gang (fx en halvårlig afgift der endnu ikke er set to
-          gange) kan ikke projiceres endnu. Øvrige udgifter er et fladt
-          gennemsnit af ikke-genkendte posteringer de seneste 3 måneder - et
-          groft skøn, ikke en garanti.
+          Hver linje er en mapping-regel, projiceret på det interval den
+          faktisk plejer at optræde med - månedligt, kvartalsvist,
+          halvårligt osv. En post der kun er set én gang (fx en halvårlig
+          afgift der endnu ikke er set to gange) kan ikke projiceres endnu.
+          Øvrige udgifter er et fladt gennemsnit af ikke-genkendte
+          posteringer de seneste 3 måneder - et groft skøn, ikke en garanti.
         </p>
       </section>
 
@@ -264,13 +238,19 @@ export default async function PrognosePage() {
                     t.direction === "increasing" ? "text-red-600" : "text-green-700"
                   }`}
                 >
-                  {t.direction === "increasing" ? "↑" : "↓"}{" "}
+                  {t.direction === "increasing" ? "Steget" : "Faldet"}{" "}
                   {Math.abs(t.percentChange)}%
                 </span>
               </li>
             ))}
           </ul>
         )}
+        <p className="mt-2 text-xs text-stone-400">
+          Sammenligner gennemsnitsforbruget pr. kategori i første og anden
+          halvdel af de seneste 6 måneder. En kategori vises kun her hvis
+          forskellen er over 10% i enten retning - mindre udsving regnes som
+          stabilt og vises ikke.
+        </p>
       </section>
     </div>
   );

@@ -16,6 +16,12 @@ const monthFormatter = new Intl.DateTimeFormat("da-DK", {
   timeZone: "UTC",
 });
 
+const monthShortFormatter = new Intl.DateTimeFormat("da-DK", {
+  month: "short",
+  year: "2-digit",
+  timeZone: "UTC",
+});
+
 export function formatCurrency(value: number): string {
   return currencyFormatter.format(value);
 }
@@ -29,4 +35,9 @@ export function formatDateDa(iso: string): string {
 /** Formatterer en "YYYY-MM"-månedsnøgle som "januar 2026". */
 export function formatMonthDa(monthKey: string): string {
   return monthFormatter.format(new Date(`${monthKey}-01T00:00:00Z`));
+}
+
+/** Formatterer en "YYYY-MM"-månedsnøgle kompakt som "aug. 26". */
+export function formatMonthShortDa(monthKey: string): string {
+  return monthShortFormatter.format(new Date(`${monthKey}-01T00:00:00Z`));
 }

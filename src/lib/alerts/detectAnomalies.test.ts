@@ -124,10 +124,12 @@ describe("detectUnusualAmounts", () => {
 });
 
 describe("detectMissingRecurring", () => {
-  it("flager en mapping-regel der plejede at komme, men mangler i den nye måned", () => {
+  it("flager en mapping-regel der plejede at komme, men mangler i den nye måned (efter dens typiske dag)", () => {
     const may = makeTx({ date: "2026-05-15", mapping_id: "m1" });
     const june = makeTx({ date: "2026-06-15", mapping_id: "m1" });
-    const july = makeTx({ date: "2026-07-15", mapping_id: "m2" });
+    // m2 repræsenterer hvor meget af juli der rent faktisk er uploadet -
+    // den 20. er forbi m1's typiske dag (15.) + margin.
+    const july = makeTx({ date: "2026-07-20", mapping_id: "m2" });
 
     const labels = new Map([["m1", "Oister"]]);
     const alerts = detectMissingRecurring(
@@ -142,6 +144,7 @@ describe("detectMissingRecurring", () => {
       mapping_id: "m1",
       label: "Oister",
       month_key: "2026-07",
+      typical_day: 15,
     });
   });
 
@@ -157,7 +160,7 @@ describe("detectMissingRecurring", () => {
 
   it("flager ikke hvis reglen kun optrådte i én af de to foregående måneder", () => {
     const june = makeTx({ date: "2026-06-15", mapping_id: "m1" });
-    const july = makeTx({ date: "2026-07-15", mapping_id: "m2" });
+    const july = makeTx({ date: "2026-07-20", mapping_id: "m2" });
 
     expect(
       detectMissingRecurring([july], [june, july], new Map()),
@@ -167,7 +170,7 @@ describe("detectMissingRecurring", () => {
   it("flager ikke en regel der er manuelt markeret som afsluttet", () => {
     const may = makeTx({ date: "2026-05-15", mapping_id: "m1" });
     const june = makeTx({ date: "2026-06-15", mapping_id: "m1" });
-    const july = makeTx({ date: "2026-07-15", mapping_id: "m2" });
+    const july = makeTx({ date: "2026-07-20", mapping_id: "m2" });
 
     const labels = new Map([["m1", "Realkredit Danmark"]]);
     const alerts = detectMissingRecurring(
@@ -178,5 +181,44 @@ describe("detectMissingRecurring", () => {
     );
 
     expect(alerts).toHaveLength(0);
+  });
+
+  it("flager ikke hvis vi endnu ikke har uploadet forbi den typiske dag + margin", () => {
+    // m1 plejer at komme omkring den 20. - vi har kun uploadet juli til og
+    // med den 8., så det er for tidligt at konkludere den mangler.
+    const may = makeTx({ date: "2026-05-20", mapping_id: "m1" });
+    const june = makeTx({ date: "2026-06-20", mapping_id: "m1" });
+    const july = makeTx({ date: "2026-07-08", mapping_id: "m2" });
+
+    expect(
+      detectMissingRecurring([july], [may, june, july], new Map()),
+    ).toHaveLength(0);
+  });
+
+  it("flager når vi har uploadet forbi den typiske dag + margin, uden posten er dukket op", () => {
+    const may = makeTx({ date: "2026-05-20", mapping_id: "m1" });
+    const june = makeTx({ date: "2026-06-20", mapping_id: "m1" });
+    // Den 25. er forbi den 20. + 3 dages margin.
+    const july = makeTx({ date: "2026-07-25", mapping_id: "m2" });
+
+    const alerts = detectMissingRecurring([july], [may, june, july], new Map());
+
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].typical_day).toBe(20);
+  });
+
+  it("bruger median af historiske dage som den typiske dag", () => {
+    const apr = makeTx({ date: "2026-04-18", mapping_id: "m1" });
+    const may = makeTx({ date: "2026-05-20", mapping_id: "m1" });
+    const june = makeTx({ date: "2026-06-22", mapping_id: "m1" });
+    const july = makeTx({ date: "2026-07-25", mapping_id: "m2" });
+
+    const alerts = detectMissingRecurring(
+      [july],
+      [apr, may, june, july],
+      new Map(),
+    );
+
+    expect(alerts[0].typical_day).toBe(20);
   });
 });

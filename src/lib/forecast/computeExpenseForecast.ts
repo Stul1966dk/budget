@@ -24,14 +24,16 @@ export type ForecastMonth = {
  * (manuelt markeret som afsluttet, fx fordi huset er solgt) ignoreres helt,
  * uanset deres historiske mønster.
  *
- * Returnerer beløb pr. mapping-regel summeret pr. måned den er forventet.
+ * Returnerer beløb pr. mapping-regel, pr. måned den er forventet - bevarer
+ * detaljen pr. regel, så den kan vises som selvstændig linje i et regneark
+ * (se computeForecastLineItems) eller summeres til ét tal (se sumByMonth).
  */
-function projectRecurringByInterval(
+export function projectRecurringByIntervalDetailed(
   rows: TransactionRow[],
   fromMonthKey: string,
   monthsAhead: number,
   discontinuedMappingIds: Set<string>,
-): Map<string, number> {
+): Map<string, Map<string, number>> {
   const mappingMonthAmount = new Map<string, Map<string, number>>();
   for (const t of rows) {
     if (!t.mapping_id || discontinuedMappingIds.has(t.mapping_id)) continue;
@@ -43,9 +45,9 @@ function projectRecurringByInterval(
     monthMap.set(monthKey, (monthMap.get(monthKey) ?? 0) + t.amount);
   }
 
-  const byMonth = new Map<string, number>();
+  const projectedByMapping = new Map<string, Map<string, number>>();
 
-  for (const monthMap of mappingMonthAmount.values()) {
+  for (const [mappingId, monthMap] of mappingMonthAmount.entries()) {
     const occurrences = Array.from(monthMap.keys()).sort();
     if (occurrences.length < 2) continue;
 
@@ -57,26 +59,38 @@ function projectRecurringByInterval(
     if (monthDiff(lastOccurrence, fromMonthKey) > interval * 1.5) continue;
 
     const amount = monthMap.get(lastOccurrence)!;
+    const dueMonths = new Map<string, number>();
 
     let due = shiftMonthKey(lastOccurrence, interval);
     while (monthDiff(fromMonthKey, due) <= monthsAhead) {
       if (monthDiff(fromMonthKey, due) >= 1) {
-        byMonth.set(due, (byMonth.get(due) ?? 0) + amount);
+        dueMonths.set(due, (dueMonths.get(due) ?? 0) + amount);
       }
       due = shiftMonthKey(due, interval);
     }
+
+    if (dueMonths.size > 0) {
+      projectedByMapping.set(mappingId, dueMonths);
+    }
   }
 
+  return projectedByMapping;
+}
+
+function sumByMonth(detailed: Map<string, Map<string, number>>): Map<string, number> {
+  const byMonth = new Map<string, number>();
+  for (const monthMap of detailed.values()) {
+    for (const [monthKey, amount] of monthMap.entries()) {
+      byMonth.set(monthKey, (byMonth.get(monthKey) ?? 0) + amount);
+    }
+  }
   return byMonth;
 }
 
 /**
  * Projicerer forventede udgifter OG indbetalinger for de kommende
- * `monthsAhead` måneder ud fra `fromMonthKey`. Tilbagevendende poster (både
- * udgifter og indbetalinger) projiceres på de måneder de faktisk forventes
- * at optræde igen, ud fra deres eget interval - se `projectRecurringByInterval`.
- * Dertil lægges et gennemsnit af ikke-genkendte udgiftsposteringer de
- * seneste 3 måneder, som et fladt skøn over øvrigt forbrug.
+ * `monthsAhead` måneder ud fra `fromMonthKey`, summeret til ét tal pr.
+ * måned. Se `computeForecastLineItems` for en linje-for-linje udgave.
  */
 export function computeExpenseForecast(
   transactions: TransactionRow[],
@@ -88,17 +102,21 @@ export function computeExpenseForecast(
   const ordinaryIncome = transactions.filter((t) => !t.is_extraordinary && t.amount > 0);
   const lastThree = [1, 2, 3].map((n) => shiftMonthKey(fromMonthKey, -n));
 
-  const recurringExpenseByMonth = projectRecurringByInterval(
-    ordinaryExpenses,
-    fromMonthKey,
-    monthsAhead,
-    discontinuedMappingIds,
+  const recurringExpenseByMonth = sumByMonth(
+    projectRecurringByIntervalDetailed(
+      ordinaryExpenses,
+      fromMonthKey,
+      monthsAhead,
+      discontinuedMappingIds,
+    ),
   );
-  const recurringIncomeByMonth = projectRecurringByInterval(
-    ordinaryIncome,
-    fromMonthKey,
-    monthsAhead,
-    discontinuedMappingIds,
+  const recurringIncomeByMonth = sumByMonth(
+    projectRecurringByIntervalDetailed(
+      ordinaryIncome,
+      fromMonthKey,
+      monthsAhead,
+      discontinuedMappingIds,
+    ),
   );
 
   const unmappedByMonth = new Map<string, number>();
