@@ -67,6 +67,13 @@ export type AdvisorInsightRow = {
   created_at: string;
 };
 
+export type AdvisorMessageRow = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+};
+
 export type ForecastSettingsRow = {
   id: string;
   monthly_income_override: number | null;

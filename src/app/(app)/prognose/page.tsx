@@ -7,6 +7,7 @@ import { extractMonthKey, getCurrentMonthKey } from "@/lib/month";
 import { formatCurrency, formatMonthDa, formatDateDa } from "@/lib/format";
 import type {
   AdvisorInsightRow,
+  AdvisorMessageRow,
   Category,
   ForecastSettingsRow,
   TextMappingRow,
@@ -15,6 +16,7 @@ import type {
 import { RefreshAdviceButton } from "./RefreshAdviceButton";
 import { IncomeOverrideForm } from "./IncomeOverrideForm";
 import { AdvisorNotesForm } from "./AdvisorNotesForm";
+import { AdvisorChat } from "./AdvisorChat";
 import { ForecastRangeSelector } from "./ForecastRangeSelector";
 import { ForecastSheet } from "./ForecastSheet";
 
@@ -42,6 +44,7 @@ export default async function PrognosePage({
     { data: insightData },
     { data: settingsData },
     { data: mappingsData },
+    { data: chatMessagesData },
   ] = await Promise.all([
     supabase.from("transactions").select("*").order("date"),
     supabase.from("categories").select("*").order("sort_order"),
@@ -55,12 +58,14 @@ export default async function PrognosePage({
     supabase
       .from("text_mappings")
       .select("id, comment, match_pattern, category_id, active"),
+    supabase.from("advisor_messages").select("*").order("created_at"),
   ]);
 
   const transactions = (transactionsData ?? []) as TransactionRow[];
   const categories = (categoriesData ?? []) as Category[];
   const insight = (insightData ?? null) as AdvisorInsightRow | null;
   const settings = (settingsData ?? null) as ForecastSettingsRow | null;
+  const chatMessages = (chatMessagesData ?? []) as AdvisorMessageRow[];
   const incomeOverride = settings?.monthly_income_override ?? null;
   const mappings = (mappingsData ?? []) as Pick<
     TextMappingRow,
@@ -101,7 +106,7 @@ export default async function PrognosePage({
       <p className="mt-1 text-sm text-stone-500">
         Opsparingsrate, udgiftsprognose og kategori-trends baseret på jeres
         egne posteringer, med en kort AI-genereret anbefaling der opdateres
-        ved hver ny upload.
+        ved hver ny upload - og en chat hvor I kan spørge ind til tallene.
       </p>
 
       <div className="mt-4 inline-flex items-baseline gap-2 rounded-xl border border-stone-200 bg-white px-4 py-3">
@@ -140,6 +145,8 @@ export default async function PrognosePage({
         )}
         <AdvisorNotesForm notes={settings?.advisor_notes ?? null} />
       </div>
+
+      <AdvisorChat messages={chatMessages} />
 
       <section className="mt-6">
         <h2 className="text-sm font-semibold text-stone-900">Opsparingsrate</h2>

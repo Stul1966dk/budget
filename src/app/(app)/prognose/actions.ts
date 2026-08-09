@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { refreshAdvisorInsight } from "@/lib/advisor/refreshAdvisorInsight";
+import { buildBudgetSnapshot } from "@/lib/advisor/buildBudgetSnapshot";
+import { chatWithAdvisor, type ChatMessage } from "@/lib/advisor/chatWithAdvisor";
 
 export async function regenerateAdvice(): Promise<{
   status: "success" | "error";
@@ -96,6 +98,88 @@ export async function updateAdvisorNotes(
   if (error) {
     console.error("updateAdvisorNotes: kunne ikke gemme noten:", error.code, error.message);
     return { status: "error", message: "Kunne ikke gemme noten." };
+  }
+
+  revalidatePath("/prognose");
+  return { status: "success" };
+}
+
+const askAdvisorSchema = z.object({ question: z.string().trim().min(1).max(2000) });
+
+export async function askAdvisor(
+  question: string,
+): Promise<{ status: "success" | "error"; message?: string }> {
+  const parsed = askAdvisorSchema.safeParse({ question });
+  if (!parsed.success) {
+    return { status: "error", message: "Skriv et spørgsmål." };
+  }
+
+  const supabase = await createClient();
+
+  const { error: insertUserError } = await supabase
+    .from("advisor_messages")
+    .insert({ role: "user", content: parsed.data.question });
+
+  if (insertUserError) {
+    console.error(
+      "askAdvisor: kunne ikke gemme spørgsmålet:",
+      insertUserError.code,
+      insertUserError.message,
+    );
+    return { status: "error", message: "Kunne ikke gemme spørgsmålet." };
+  }
+
+  const snapshot = await buildBudgetSnapshot(supabase);
+  if (!snapshot) {
+    return { status: "error", message: "Ingen budgetdata endnu til at svare ud fra." };
+  }
+
+  const { data: messageRows } = await supabase
+    .from("advisor_messages")
+    .select("role, content")
+    .order("created_at");
+
+  const history: ChatMessage[] = (messageRows ?? []).map((m) => ({
+    role: m.role as "user" | "assistant",
+    content: m.content,
+  }));
+
+  try {
+    const answer = await chatWithAdvisor(snapshot, history);
+    const { error: insertAssistantError } = await supabase
+      .from("advisor_messages")
+      .insert({ role: "assistant", content: answer });
+
+    if (insertAssistantError) {
+      console.error(
+        "askAdvisor: kunne ikke gemme svaret:",
+        insertAssistantError.code,
+        insertAssistantError.message,
+      );
+      return { status: "error", message: "Kunne ikke gemme svaret." };
+    }
+  } catch (err) {
+    console.error("askAdvisor: kunne ikke generere svar:", err);
+    return {
+      status: "error",
+      message: "Kunne ikke generere et svar. Tjek at ANTHROPIC_API_KEY er sat, og prøv igen.",
+    };
+  }
+
+  revalidatePath("/prognose");
+  return { status: "success" };
+}
+
+export async function clearAdvisorChat(): Promise<{
+  status: "success" | "error";
+  message?: string;
+}> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("advisor_messages").delete().not("id", "is", null);
+
+  if (error) {
+    console.error("clearAdvisorChat: kunne ikke rydde samtalen:", error.code, error.message);
+    return { status: "error", message: "Kunne ikke rydde samtalen." };
   }
 
   revalidatePath("/prognose");
