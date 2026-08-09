@@ -83,7 +83,15 @@ export function RuleList({
 
           if (editingId === rule.id) {
             return (
-              <li key={rule.id} className="p-4">
+              <li key={rule.id} className="bg-stone-50 p-4">
+                <p className="text-xs font-medium text-stone-500">
+                  Redigerer &quot;{rule.match_pattern}&quot;
+                </p>
+                <p className="mb-3 mt-1 text-xs text-stone-400">
+                  {matchCounts[rule.id] ?? 0} posteringer matchet
+                  {matchAmountLabel(matchAmounts[rule.id]) &&
+                    ` · ${matchAmountLabel(matchAmounts[rule.id])}`}
+                </p>
                 <RuleEditForm
                   rule={rule}
                   categories={categories}

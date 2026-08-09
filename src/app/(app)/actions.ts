@@ -134,6 +134,7 @@ export async function saveTransactionEdit(
   revalidatePath("/");
   revalidatePath("/maaned");
   revalidatePath("/regler");
+  revalidatePath("/prognose");
   return { status: "success", newRule };
 }
 
@@ -214,6 +215,7 @@ export async function applyRuleRetroactively(ruleId: string): Promise<{
   revalidatePath("/");
   revalidatePath("/maaned");
   revalidatePath("/regler");
+  revalidatePath("/prognose");
 
   return { status: "success", updated: matches.length };
 }

@@ -163,6 +163,12 @@ export async function deleteMappingRule(
     return { status: "error", message: "Kunne ikke slette reglen." };
   }
 
+  // Sletning nulstiller mapping_id på posteringer der havde reglen (FK
+  // on delete set null), hvilket ændrer hvordan de vises overalt - ikke kun
+  // på selve Regler-siden.
+  revalidatePath("/");
+  revalidatePath("/maaned");
   revalidatePath("/regler");
+  revalidatePath("/prognose");
   return { status: "success" };
 }

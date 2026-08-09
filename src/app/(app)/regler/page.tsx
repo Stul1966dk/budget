@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Category, TextMappingRow } from "@/lib/types/db";
 import { RuleList } from "./RuleList";
 import { CategoryFilter } from "./CategoryFilter";
+import { CategoryManager } from "./CategoryManager";
 
 export default async function ReglerPage({
   searchParams,
@@ -106,6 +107,8 @@ export default async function ReglerPage({
         </div>
         <CategoryFilter categories={categories} />
       </div>
+
+      <CategoryManager categories={categories} />
 
       <RuleList
         rules={rules}

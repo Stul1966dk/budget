@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { parseDanskeBankFile } from "@/lib/csv/parseDanskeBank";
 import { findBestMatchingRule } from "@/lib/mapping/findBestMatch";
@@ -151,6 +152,11 @@ export async function importCsvFile(formData: FormData): Promise<ImportResult> {
     // at importen skal tælle som gennemført.
     await refreshAdvisorInsight(supabase);
   }
+
+  revalidatePath("/");
+  revalidatePath("/maaned");
+  revalidatePath("/regler");
+  revalidatePath("/prognose");
 
   return {
     status: "success",

@@ -116,19 +116,6 @@ export async function askAdvisor(
 
   const supabase = await createClient();
 
-  const { error: insertUserError } = await supabase
-    .from("advisor_messages")
-    .insert({ role: "user", content: parsed.data.question });
-
-  if (insertUserError) {
-    console.error(
-      "askAdvisor: kunne ikke gemme spørgsmålet:",
-      insertUserError.code,
-      insertUserError.message,
-    );
-    return { status: "error", message: "Kunne ikke gemme spørgsmålet." };
-  }
-
   const snapshot = await buildBudgetSnapshot(supabase);
   if (!snapshot) {
     return { status: "error", message: "Ingen budgetdata endnu til at svare ud fra." };
@@ -143,27 +130,34 @@ export async function askAdvisor(
     role: m.role as "user" | "assistant",
     content: m.content,
   }));
+  history.push({ role: "user", content: parsed.data.question });
 
+  // Spørgsmål og svar gemmes først, når vi rent faktisk har et svar - ellers
+  // ville et fejlet API-kald efterlade et ubesvaret spørgsmål i historikken,
+  // der forvirrer både visningen og næste besked til AI'en.
+  let answer: string;
   try {
-    const answer = await chatWithAdvisor(snapshot, history);
-    const { error: insertAssistantError } = await supabase
-      .from("advisor_messages")
-      .insert({ role: "assistant", content: answer });
-
-    if (insertAssistantError) {
-      console.error(
-        "askAdvisor: kunne ikke gemme svaret:",
-        insertAssistantError.code,
-        insertAssistantError.message,
-      );
-      return { status: "error", message: "Kunne ikke gemme svaret." };
-    }
+    answer = await chatWithAdvisor(snapshot, history);
   } catch (err) {
     console.error("askAdvisor: kunne ikke generere svar:", err);
     return {
       status: "error",
       message: "Kunne ikke generere et svar. Tjek at ANTHROPIC_API_KEY er sat, og prøv igen.",
     };
+  }
+
+  const { error: insertError } = await supabase.from("advisor_messages").insert([
+    { role: "user", content: parsed.data.question },
+    { role: "assistant", content: answer },
+  ]);
+
+  if (insertError) {
+    console.error(
+      "askAdvisor: kunne ikke gemme samtalen:",
+      insertError.code,
+      insertError.message,
+    );
+    return { status: "error", message: "Kunne ikke gemme samtalen." };
   }
 
   revalidatePath("/prognose");

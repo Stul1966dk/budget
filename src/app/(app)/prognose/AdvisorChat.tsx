@@ -34,6 +34,7 @@ export function AdvisorChat({ messages }: { messages: AdvisorMessageRow[] }) {
 
     if (result.status === "error") {
       setError(result.message ?? "Der opstod en fejl.");
+      setQuestion(trimmed);
       return;
     }
     router.refresh();
