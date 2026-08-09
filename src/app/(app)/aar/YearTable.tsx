@@ -37,11 +37,14 @@ export function YearTable({
   rows,
   monthTotals,
   grandTotal,
+  monthlyBalances,
 }: {
   rows: YearTableCategory[];
   monthTotals: number[];
   grandTotal: number;
+  monthlyBalances: (number | null)[];
 }) {
+  const latestKnownBalance = [...monthlyBalances].reverse().find((v) => v !== null) ?? null;
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const expandableKeys = rows.filter((r) => r.items.length > 0).map((r) => r.key);
 
@@ -156,6 +159,28 @@ export function YearTable({
                 </td>
               ))}
               <td className="px-3 py-2 text-right">{formatCurrency(grandTotal)}</td>
+            </tr>
+            <tr className="bg-stone-50 text-stone-600">
+              <td className="sticky left-0 bg-stone-50 px-3 py-2 text-left">Saldo</td>
+              {monthlyBalances.map((value, i) => (
+                <td
+                  key={i}
+                  className={`px-2 py-2 text-right ${
+                    value !== null && value < 0 ? "text-red-600" : ""
+                  }`}
+                >
+                  {value !== null ? formatCurrency(value) : "–"}
+                </td>
+              ))}
+              <td
+                className={`px-3 py-2 text-right ${
+                  latestKnownBalance !== null && latestKnownBalance < 0
+                    ? "text-red-600"
+                    : ""
+                }`}
+              >
+                {latestKnownBalance !== null ? formatCurrency(latestKnownBalance) : "–"}
+              </td>
             </tr>
           </tfoot>
         </table>

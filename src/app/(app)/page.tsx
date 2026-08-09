@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Category, TextMappingRow, TransactionRow } from "@/lib/types/db";
+import { computeCurrentBalance } from "@/lib/forecast/computeCurrentBalance";
+import { computeMonthlyBalances } from "@/lib/forecast/computeMonthlyBalances";
+import { formatCurrency } from "@/lib/format";
 import { YearSelector } from "./aar/YearSelector";
 import { YearTable, type YearTableCategory } from "./aar/YearTable";
 
@@ -41,19 +44,24 @@ export default async function AarPage({
   const start = `${year}-01-01`;
   const end = `${year}-12-31`;
 
-  const [{ data: categoriesData }, { data: transactionsData }, { data: mappingsData }] =
-    await Promise.all([
-      supabase.from("categories").select("*").order("sort_order"),
-      supabase
-        .from("transactions")
-        .select(
-          "id, date, amount, category_id, is_extraordinary, raw_text, comment, mapping_id",
-        )
-        .gte("date", start)
-        .lte("date", end)
-        .eq("is_extraordinary", false),
-      supabase.from("text_mappings").select("id, comment, match_pattern, display_mode"),
-    ]);
+  const [
+    { data: categoriesData },
+    { data: transactionsData },
+    { data: mappingsData },
+    { data: balanceData },
+  ] = await Promise.all([
+    supabase.from("categories").select("*").order("sort_order"),
+    supabase
+      .from("transactions")
+      .select(
+        "id, date, amount, category_id, is_extraordinary, raw_text, comment, mapping_id",
+      )
+      .gte("date", start)
+      .lte("date", end)
+      .eq("is_extraordinary", false),
+    supabase.from("text_mappings").select("id, comment, match_pattern, display_mode"),
+    supabase.from("transactions").select("date, balance, import_seq"),
+  ]);
 
   const categories = (categoriesData ?? []) as Category[];
   const transactions = (transactionsData ?? []) as YearTransaction[];
@@ -61,6 +69,8 @@ export default async function AarPage({
   const ruleMap = new Map(
     ((mappingsData ?? []) as YearMappingRule[]).map((m) => [m.id, m]),
   );
+  const currentBalance = computeCurrentBalance(balanceData ?? []);
+  const monthlyBalances = computeMonthlyBalances(balanceData ?? [], year);
 
   const categoryGrid = new Map<string, number[]>();
   const itemGrid = new Map<string, Map<string, { label: string; months: number[] }>>();
@@ -157,12 +167,30 @@ export default async function AarPage({
         poster). Klik på en kategori for at se de enkelte poster.
       </p>
 
+      <div className="mt-4 inline-flex items-baseline gap-2 rounded-xl border border-stone-200 bg-white px-4 py-3">
+        <span className="text-xs text-stone-500">Nuværende saldo</span>
+        <span
+          className={`text-base font-semibold ${
+            currentBalance !== null && currentBalance >= 0
+              ? "text-green-700"
+              : "text-red-700"
+          }`}
+        >
+          {currentBalance !== null ? formatCurrency(currentBalance) : "Ukendt"}
+        </span>
+      </div>
+
       {rows.length === 0 ? (
         <p className="mt-6 text-sm text-stone-400">
           Ingen posteringer for {year}.
         </p>
       ) : (
-        <YearTable rows={rows} monthTotals={monthTotals} grandTotal={grandTotal} />
+        <YearTable
+          rows={rows}
+          monthTotals={monthTotals}
+          grandTotal={grandTotal}
+          monthlyBalances={monthlyBalances}
+        />
       )}
     </div>
   );

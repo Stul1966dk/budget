@@ -8,7 +8,9 @@ import type { TransactionRow } from "@/lib/types/db";
  * rækkefølge) bruges som sekundær sortering for at finde den faktisk
  * seneste postering på den seneste dato.
  */
-export function computeCurrentBalance(transactions: TransactionRow[]): number | null {
+export function computeCurrentBalance(
+  transactions: Pick<TransactionRow, "date" | "balance" | "import_seq">[],
+): number | null {
   const withBalance = transactions.filter(
     (t): t is TransactionRow & { balance: number } => t.balance !== null,
   );

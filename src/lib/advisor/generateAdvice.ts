@@ -10,6 +10,7 @@ export async function generateAdvice(input: {
   currentBalance: number | null;
   savings: MonthlySavings[];
   forecast: ForecastMonth[];
+  projectedBalances: number[];
   trends: CategoryTrend[];
   advisorNotes: string | null;
 }): Promise<string> {
@@ -25,13 +26,14 @@ export async function generateAdvice(input: {
       resultat: Math.round(s.result),
       opsparing: Math.round(s.savings),
     })),
-    prognose_kommende_maaneder: input.forecast.map((f) => ({
+    prognose_kommende_maaneder: input.forecast.map((f, i) => ({
       maaned: formatMonthDa(f.monthKey),
       forventet_indbetaling: Math.round(f.recurringIncome),
       forventede_faste_udgifter: Math.round(f.recurringTotal),
       forventede_ovrige_udgifter: Math.round(f.averageUnmappedTotal),
       forventet_total_udgift: Math.round(f.projectedTotal),
       forventet_nettoresultat: Math.round(f.projectedNetResult),
+      forventet_saldo_ved_maanedens_slutning: Math.round(input.projectedBalances[i]),
     })),
     kategori_trends: input.trends
       .filter((t) => t.direction !== "stable")
@@ -55,7 +57,7 @@ export async function generateAdvice(input: {
     "'forventet_nettoresultat' pr. måned i prognosen er allerede beregnet som forventet indbetaling minus forventede udgifter - brug DEN til at vurdere om saldoen vokser eller svinder, fremfor selv at regne det ud fra andre tal. " +
     "Bemærk at 'forventede_faste_udgifter' KAN variere fra måned til måned, fordi nogle poster kun forfalder kvartalsvist eller halvårligt (fx bilafgift) - det er ikke en fejl, en enkelt måned kan derfor ramme markant hårdere end de andre. " +
     "Ekstraordinære engangsposter (fx hussalg, store udlæg, éngangsoverførsler) er allerede fjernet fra alle tallene du får, fordi de ikke er en del af husstandens normale budget. Et negativt resultat i tallene er derfor det reelle billede EKSKLUSIVE sådanne engangsposter - undlad at antage det er udlignet af noget udenfor dataen. " +
-    "Inddrag 'nuvaerende_saldo' som kontekst: hvis flere måneder har negativt nettoresultat, kan du lægge dem sammen ud fra de faktiske tal for at vurdere hvornår bufferen er brugt op - men brug kun de tal du har fået, opfind aldrig et præcist fremtidigt tal du ikke kan udlede direkte. " +
+    "'forventet_saldo_ved_maanedens_slutning' er allerede beregnet som nuværende saldo plus det akkumulerede forventede nettoresultat måned for måned - brug DEN direkte til at vurdere om og hvornår saldoen risikerer at blive negativ, fremfor selv at lægge tal sammen på tværs af måneder. " +
     "Dette er budgetrådgivning baseret på husstandens egne tal - ikke investeringsrådgivning. " +
     "Skriv som en kort punktliste, konkret og uden fyld. Ingen indledning, ingen afslutning, ingen overskrifter. " +
     "Ren tekst uden markdown-formatering - ingen ** for fed skrift eller andre markdown-tegn.";

@@ -18,6 +18,11 @@ export type BudgetSnapshot = {
   currentBalance: number | null;
   savings: MonthlySavings[];
   forecast: ForecastMonth[];
+  /** Forventet saldo ved udgangen af hver måned i `forecast` - nuværende
+   * saldo plus det akkumulerede forventede nettoresultat. Samme tal som vises
+   * i "Forventet saldo" på Rådgiver-siden, beregnet ét sted så AI'en ikke
+   * selv skal lægge måneder sammen. */
+  projectedBalances: number[];
   trends: CategoryTrend[];
   incomeOverride: number | null;
   advisorNotes: string | null;
@@ -72,6 +77,11 @@ export async function buildBudgetSnapshot(
     discontinuedMappingIds,
   );
   const forecast = applyIncomeOverride(rawForecast, settings?.monthly_income_override ?? null);
+  const projectedBalances = forecast.reduce<number[]>((acc, f, i) => {
+    const previous = i === 0 ? currentBalance ?? 0 : acc[i - 1];
+    acc.push(previous + f.projectedNetResult);
+    return acc;
+  }, []);
   const trends = computeCategoryTrends(transactions, categories);
   const recentAlertMessages = ((alertsData ?? []) as AlertRow[]).map(composeAlertMessage);
 
@@ -79,6 +89,7 @@ export async function buildBudgetSnapshot(
     currentBalance,
     savings,
     forecast,
+    projectedBalances,
     trends,
     incomeOverride: settings?.monthly_income_override ?? null,
     advisorNotes: settings?.advisor_notes ?? null,

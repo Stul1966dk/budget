@@ -13,6 +13,7 @@ export function ForecastSheet({
   incomeTotals,
   expenseTotals,
   netTotals,
+  projectedBalances,
   incomeIsOverridden,
 }: {
   monthKeys: string[];
@@ -22,6 +23,7 @@ export function ForecastSheet({
   incomeTotals: number[];
   expenseTotals: number[];
   netTotals: number[];
+  projectedBalances: number[];
   incomeIsOverridden: boolean;
 }) {
   const otherExpenseRow = monthKeys.map(() => otherExpenseAverage);
@@ -80,6 +82,28 @@ export function ForecastSheet({
               }`}
             >
               {formatCurrency(sum(netTotals))}
+            </td>
+          </tr>
+          <tr className="bg-stone-50 text-stone-600">
+            <td className="sticky left-0 bg-stone-50 px-3 py-2 text-left">
+              Forventet saldo
+            </td>
+            {projectedBalances.map((value, i) => (
+              <td
+                key={i}
+                className={`px-2 py-2 text-right ${value < 0 ? "text-red-600" : ""}`}
+              >
+                {formatCurrency(value)}
+              </td>
+            ))}
+            <td
+              className={`px-3 py-2 text-right ${
+                (projectedBalances.at(-1) ?? 0) < 0 ? "text-red-600" : ""
+              }`}
+            >
+              {projectedBalances.length > 0
+                ? formatCurrency(projectedBalances.at(-1)!)
+                : "–"}
             </td>
           </tr>
         </tfoot>

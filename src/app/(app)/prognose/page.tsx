@@ -96,6 +96,11 @@ export default async function PrognosePage({
       ? sheet.monthKeys.map(() => incomeOverride)
       : sheet.incomeTotals;
   const netTotals = incomeTotals.map((income, i) => income - sheet.expenseTotals[i]);
+  const projectedBalances = netTotals.reduce<number[]>((acc, net, i) => {
+    const previous = i === 0 ? currentBalance ?? 0 : acc[i - 1];
+    acc.push(previous + net);
+    return acc;
+  }, []);
   const trends = computeCategoryTrends(transactions, categories).filter(
     (t) => t.direction !== "stable",
   );
@@ -246,6 +251,7 @@ export default async function PrognosePage({
             incomeTotals={incomeTotals}
             expenseTotals={sheet.expenseTotals}
             netTotals={netTotals}
+            projectedBalances={projectedBalances}
             incomeIsOverridden={incomeOverride !== null}
           />
         )}
@@ -256,6 +262,8 @@ export default async function PrognosePage({
           afgift der endnu ikke er set to gange) kan ikke projiceres endnu.
           Øvrige udgifter er et fladt gennemsnit af ikke-genkendte
           posteringer de seneste 3 måneder - et groft skøn, ikke en garanti.
+          &quot;Forventet saldo&quot; lægger hver måneds nettoresultat oveni
+          nuværende saldo, måned for måned.
         </p>
       </section>
 
