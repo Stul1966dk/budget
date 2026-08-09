@@ -11,6 +11,7 @@ export async function generateAdvice(input: {
   savings: MonthlySavings[];
   forecast: ForecastMonth[];
   trends: CategoryTrend[];
+  advisorNotes: string | null;
 }): Promise<string> {
   const client = new Anthropic();
 
@@ -47,20 +48,27 @@ export async function generateAdvice(input: {
   // ANTHROPIC_MODEL. Udelades derfor i stedet for at fejle på ældre modeller.
   const supportsEffort = !ADVISOR_MODEL.includes("haiku");
 
+  const baseSystemPrompt =
+    "Du er en budgetrådgiver for en dansk husstand. Du får strukturerede tal fra husstandens eget budget-app og skal give 2-4 korte, konkrete anbefalinger på dansk. " +
+    "Brug KUN de tal du får - opfind aldrig tal, og lav aldrig antagelser om ting der ikke fremgår af dataen. " +
+    "Fokusér på: om opsparingen (kolonnen 'opsparing') ser tilstrækkelig ud i forhold til resultatet, om nogen udgiftskategorier vokser bekymrende, og hvad prognosen for de kommende måneder betyder for husstandens økonomi. " +
+    "'forventet_nettoresultat' pr. måned i prognosen er allerede beregnet som forventet indbetaling minus forventede udgifter - brug DEN til at vurdere om saldoen vokser eller svinder, fremfor selv at regne det ud fra andre tal. " +
+    "Bemærk at 'forventede_faste_udgifter' KAN variere fra måned til måned, fordi nogle poster kun forfalder kvartalsvist eller halvårligt (fx bilafgift) - det er ikke en fejl, en enkelt måned kan derfor ramme markant hårdere end de andre. " +
+    "Ekstraordinære engangsposter (fx hussalg, store udlæg, éngangsoverførsler) er allerede fjernet fra alle tallene du får, fordi de ikke er en del af husstandens normale budget. Et negativt resultat i tallene er derfor det reelle billede EKSKLUSIVE sådanne engangsposter - undlad at antage det er udlignet af noget udenfor dataen. " +
+    "Inddrag 'nuvaerende_saldo' som kontekst: hvis flere måneder har negativt nettoresultat, kan du lægge dem sammen ud fra de faktiske tal for at vurdere hvornår bufferen er brugt op - men brug kun de tal du har fået, opfind aldrig et præcist fremtidigt tal du ikke kan udlede direkte. " +
+    "Dette er budgetrådgivning baseret på husstandens egne tal - ikke investeringsrådgivning. " +
+    "Skriv som en kort punktliste, konkret og uden fyld. Ingen indledning, ingen afslutning, ingen overskrifter. " +
+    "Ren tekst uden markdown-formatering - ingen ** for fed skrift eller andre markdown-tegn.";
+
+  const system = input.advisorNotes?.trim()
+    ? `${baseSystemPrompt}\n\nHusstanden har selv tilføjet denne ekstra kontekst/instruks - tag højde for den: ${input.advisorNotes.trim()}`
+    : baseSystemPrompt;
+
   const response = await client.messages.create({
     model: ADVISOR_MODEL,
     max_tokens: 1024,
     ...(supportsEffort ? { output_config: { effort: "medium" as const } } : {}),
-    system:
-      "Du er en budgetrådgiver for en dansk husstand. Du får strukturerede tal fra husstandens eget budget-app og skal give 2-4 korte, konkrete anbefalinger på dansk. " +
-      "Brug KUN de tal du får - opfind aldrig tal, og lav aldrig antagelser om ting der ikke fremgår af dataen. " +
-      "Fokusér på: om opsparingen (kolonnen 'opsparing') ser tilstrækkelig ud i forhold til resultatet, om nogen udgiftskategorier vokser bekymrende, og hvad prognosen for de kommende måneder betyder for husstandens økonomi. " +
-      "'forventet_nettoresultat' pr. måned i prognosen er allerede beregnet som forventet indbetaling minus forventede udgifter - brug DEN til at vurdere om saldoen vokser eller svinder, fremfor selv at regne det ud fra andre tal. " +
-      "Bemærk at 'forventede_faste_udgifter' KAN variere fra måned til måned, fordi nogle poster kun forfalder kvartalsvist eller halvårligt (fx bilafgift) - det er ikke en fejl, en enkelt måned kan derfor ramme markant hårdere end de andre. " +
-      "Inddrag 'nuvaerende_saldo' som kontekst: hvis flere måneder har negativt nettoresultat, kan du lægge dem sammen ud fra de faktiske tal for at vurdere hvornår bufferen er brugt op - men brug kun de tal du har fået, opfind aldrig et præcist fremtidigt tal du ikke kan udlede direkte. " +
-      "Dette er budgetrådgivning baseret på husstandens egne tal - ikke investeringsrådgivning. " +
-      "Skriv som en kort punktliste, konkret og uden fyld. Ingen indledning, ingen afslutning, ingen overskrifter. " +
-      "Ren tekst uden markdown-formatering - ingen ** for fed skrift eller andre markdown-tegn.",
+    system,
     messages: [
       {
         role: "user",

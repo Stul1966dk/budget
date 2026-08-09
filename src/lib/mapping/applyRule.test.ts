@@ -11,6 +11,7 @@ const rule: MappingRule = {
   minAmount: null,
   maxAmount: null,
   displayMode: "grouped",
+  isExtraordinary: false,
 };
 
 const untouched = (overrides: Partial<MappableTransaction>): MappableTransaction => ({
@@ -30,6 +31,7 @@ describe("computeAutoMappingUpdate", () => {
       comment: "Mobilabonnement",
       categoryId: "cat-mobil",
       mappingId: "rule-1",
+      isExtraordinary: false,
     });
   });
 
@@ -76,7 +78,14 @@ describe("computeAutoMappingUpdate", () => {
       comment: null,
       categoryId: "cat-mobil",
       mappingId: "rule-1",
+      isExtraordinary: false,
     });
+  });
+
+  it("markerer matches som ekstraordinære når reglen er det", () => {
+    const extraordinaryRule: MappingRule = { ...rule, isExtraordinary: true };
+    const result = computeAutoMappingUpdate(untouched({}), extraordinaryRule);
+    expect(result?.isExtraordinary).toBe(true);
   });
 });
 

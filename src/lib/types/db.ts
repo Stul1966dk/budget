@@ -14,6 +14,7 @@ export type TextMappingRow = {
   min_amount: number | null;
   max_amount: number | null;
   display_mode: "grouped" | "individual";
+  is_extraordinary: boolean;
   active: boolean;
   created_at: string;
 };
@@ -69,5 +70,6 @@ export type AdvisorInsightRow = {
 export type ForecastSettingsRow = {
   id: string;
   monthly_income_override: number | null;
+  advisor_notes: string | null;
   updated_at: string;
 };

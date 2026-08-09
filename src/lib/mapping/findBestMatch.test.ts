@@ -11,6 +11,7 @@ const rule = (overrides: Partial<MappingRule>): MappingRule => ({
   minAmount: null,
   maxAmount: null,
   displayMode: "grouped",
+  isExtraordinary: false,
   ...overrides,
 });
 

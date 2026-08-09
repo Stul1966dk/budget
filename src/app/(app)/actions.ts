@@ -96,6 +96,7 @@ export async function saveTransactionEdit(
         min_amount: minAmount,
         max_amount: maxAmount,
         display_mode: displayMode,
+        is_extraordinary: data.isExtraordinary,
       })
       .select("id")
       .single();
@@ -119,6 +120,7 @@ export async function saveTransactionEdit(
         minAmount,
         maxAmount,
         displayMode,
+        isExtraordinary: data.isExtraordinary,
       };
       const matches = findRetroactiveMatches(rule, candidates);
       newRule = {
@@ -171,7 +173,7 @@ export async function applyRuleRetroactively(ruleId: string): Promise<{
   const { data: ruleRow, error: ruleError } = await supabase
     .from("text_mappings")
     .select(
-      "id, match_pattern, match_type, comment, category_id, min_amount, max_amount, display_mode",
+      "id, match_pattern, match_type, comment, category_id, min_amount, max_amount, display_mode, is_extraordinary",
     )
     .eq("id", ruleId)
     .single();
@@ -189,6 +191,7 @@ export async function applyRuleRetroactively(ruleId: string): Promise<{
     minAmount: ruleRow.min_amount,
     maxAmount: ruleRow.max_amount,
     displayMode: ruleRow.display_mode,
+    isExtraordinary: ruleRow.is_extraordinary,
   };
 
   const candidates = await fetchUnmappedCandidates(supabase);
@@ -202,6 +205,7 @@ export async function applyRuleRetroactively(ruleId: string): Promise<{
           comment: rule.displayMode === "grouped" ? rule.comment : null,
           category_id: rule.categoryId,
           mapping_id: rule.id,
+          is_extraordinary: rule.isExtraordinary,
         })
         .eq("id", t.id),
     ),

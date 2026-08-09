@@ -66,3 +66,38 @@ export async function updateMonthlyIncomeOverride(
   revalidatePath("/prognose");
   return { status: "success" };
 }
+
+const advisorNotesSchema = z.object({ notes: z.string().trim().max(2000).nullable() });
+
+export async function updateAdvisorNotes(
+  notes: string | null,
+): Promise<{ status: "success" | "error"; message?: string }> {
+  const parsed = advisorNotesSchema.safeParse({ notes });
+  if (!parsed.success) {
+    return { status: "error", message: "Ugyldig tekst." };
+  }
+  const value = parsed.data.notes?.length ? parsed.data.notes : null;
+
+  const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from("forecast_settings")
+    .select("id")
+    .limit(1)
+    .maybeSingle();
+
+  const { error } = existing
+    ? await supabase
+        .from("forecast_settings")
+        .update({ advisor_notes: value, updated_at: new Date().toISOString() })
+        .eq("id", existing.id)
+    : await supabase.from("forecast_settings").insert({ advisor_notes: value });
+
+  if (error) {
+    console.error("updateAdvisorNotes: kunne ikke gemme noten:", error.code, error.message);
+    return { status: "error", message: "Kunne ikke gemme noten." };
+  }
+
+  revalidatePath("/prognose");
+  return { status: "success" };
+}

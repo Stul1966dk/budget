@@ -21,6 +21,7 @@ export type AutoMappingUpdate = {
   comment: string | null;
   categoryId: string | null;
   mappingId: string;
+  isExtraordinary: boolean;
 };
 
 /**
@@ -38,6 +39,7 @@ export function computeAutoMappingUpdate(
     comment: rule.displayMode === "grouped" ? rule.comment : null,
     categoryId: rule.categoryId,
     mappingId: rule.id,
+    isExtraordinary: rule.isExtraordinary,
   };
 }
 

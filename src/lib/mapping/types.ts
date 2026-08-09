@@ -16,6 +16,9 @@ export type MappingRule = {
    * "individual": reglen sætter ikke kommentar på matches, så hver postering
    * vises for sig via sin rå tekst, indtil den evt. navngives manuelt. */
   displayMode: DisplayMode;
+  /** Matches markeres automatisk som ekstraordinære og holdes dermed udenfor
+   * opsparingsrate, prognose, kategori-trends og AI-rådgiver. */
+  isExtraordinary: boolean;
 };
 
 export type MappableTransaction = {

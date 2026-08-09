@@ -13,6 +13,7 @@ const updateSchema = z.object({
   minAmount: z.number().nonnegative().nullable(),
   maxAmount: z.number().nonnegative().nullable(),
   displayMode: z.enum(["grouped", "individual"]),
+  isExtraordinary: z.boolean(),
 });
 
 export type UpdateMappingRuleInput = z.infer<typeof updateSchema>;
@@ -44,6 +45,7 @@ export async function updateMappingRule(
       min_amount: data.minAmount,
       max_amount: data.maxAmount,
       display_mode: data.displayMode,
+      is_extraordinary: data.isExtraordinary,
     })
     .eq("id", data.id);
 
@@ -51,17 +53,22 @@ export async function updateMappingRule(
     return { status: "error", message: "Kunne ikke gemme reglen." };
   }
 
-  // Slå kategori igennem på alle posteringer der allerede er tildelt denne
-  // regel, så en ændring vises konsekvent overalt med det samme - ikke kun på
-  // nye posteringer der importeres fremover. Kommentaren cascades kun når
-  // reglen samler til én post - ellers ville det overskrive evt. individuelle
-  // navne man har givet enkelte posteringer under "Vis hver for sig".
+  // Slå kategori og ekstraordinær-status igennem på alle posteringer der
+  // allerede er tildelt denne regel, så en ændring vises konsekvent overalt
+  // med det samme - ikke kun på nye posteringer der importeres fremover.
+  // Kommentaren cascades kun når reglen samler til én post - ellers ville det
+  // overskrive evt. individuelle navne man har givet enkelte posteringer
+  // under "Vis hver for sig".
   const { error: cascadeError } = await supabase
     .from("transactions")
     .update(
       data.displayMode === "grouped"
-        ? { comment: data.comment, category_id: data.categoryId }
-        : { category_id: data.categoryId },
+        ? {
+            comment: data.comment,
+            category_id: data.categoryId,
+            is_extraordinary: data.isExtraordinary,
+          }
+        : { category_id: data.categoryId, is_extraordinary: data.isExtraordinary },
     )
     .eq("mapping_id", data.id);
 

@@ -63,7 +63,13 @@ export async function refreshAdvisorInsight(
   const trends = computeCategoryTrends(transactions, categories);
 
   try {
-    const content = await generateAdvice({ currentBalance, savings, forecast, trends });
+    const content = await generateAdvice({
+      currentBalance,
+      savings,
+      forecast,
+      trends,
+      advisorNotes: settings?.advisor_notes ?? null,
+    });
 
     const { error } = await supabase.from("advisor_insights").insert({
       content,

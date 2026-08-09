@@ -14,6 +14,7 @@ import type {
 } from "@/lib/types/db";
 import { RefreshAdviceButton } from "./RefreshAdviceButton";
 import { IncomeOverrideForm } from "./IncomeOverrideForm";
+import { AdvisorNotesForm } from "./AdvisorNotesForm";
 import { ForecastRangeSelector } from "./ForecastRangeSelector";
 import { ForecastSheet } from "./ForecastSheet";
 
@@ -137,6 +138,7 @@ export default async function PrognosePage({
             anbefaling&quot; for at generere en nu.
           </p>
         )}
+        <AdvisorNotesForm notes={settings?.advisor_notes ?? null} />
       </div>
 
       <section className="mt-6">

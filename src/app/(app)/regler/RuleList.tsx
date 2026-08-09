@@ -112,6 +112,11 @@ export function RuleList({
                       Vises hver for sig
                     </span>
                   )}
+                  {rule.is_extraordinary && (
+                    <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-700">
+                      Ekstraordinær
+                    </span>
+                  )}
                   {category && (
                     <span
                       className={`rounded-full px-2 py-0.5 text-[11px] font-medium text-white ${
@@ -215,6 +220,7 @@ function RuleEditForm({
   const [displayMode, setDisplayMode] = useState<"grouped" | "individual">(
     rule.display_mode,
   );
+  const [isExtraordinary, setIsExtraordinary] = useState(rule.is_extraordinary);
   const [isSaving, setIsSaving] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -229,6 +235,7 @@ function RuleEditForm({
       minAmount: minAmount.trim() ? Number(minAmount.trim().replace(",", ".")) : null,
       maxAmount: maxAmount.trim() ? Number(maxAmount.trim().replace(",", ".")) : null,
       displayMode,
+      isExtraordinary,
     });
     setIsSaving(false);
     onSaved();
@@ -313,6 +320,16 @@ function RuleEditForm({
           enkelt postering.
         </p>
       </div>
+      <label className="flex items-center gap-2 text-sm text-stone-700">
+        <input
+          type="checkbox"
+          checked={isExtraordinary}
+          onChange={(e) => setIsExtraordinary(e.target.checked)}
+          className="h-4 w-4 rounded border-stone-300"
+        />
+        Ekstraordinær (holdes udenfor opsparingsrate, prognose, kategori-trends
+        og AI-rådgiver)
+      </label>
       <div className="flex gap-2">
         <button
           type="button"
