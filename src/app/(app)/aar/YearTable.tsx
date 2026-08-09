@@ -166,7 +166,11 @@ export function YearTable({
                 <td
                   key={i}
                   className={`px-2 py-2 text-right ${
-                    value !== null && value < 0 ? "text-red-600" : ""
+                    value === null
+                      ? ""
+                      : value >= 0
+                        ? "text-green-700"
+                        : "text-red-700"
                   }`}
                 >
                   {value !== null ? formatCurrency(value) : "–"}
@@ -174,9 +178,11 @@ export function YearTable({
               ))}
               <td
                 className={`px-3 py-2 text-right ${
-                  latestKnownBalance !== null && latestKnownBalance < 0
-                    ? "text-red-600"
-                    : ""
+                  latestKnownBalance === null
+                    ? ""
+                    : latestKnownBalance >= 0
+                      ? "text-green-700"
+                      : "text-red-700"
                 }`}
               >
                 {latestKnownBalance !== null ? formatCurrency(latestKnownBalance) : "–"}

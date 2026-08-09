@@ -91,14 +91,16 @@ export function ForecastSheet({
             {projectedBalances.map((value, i) => (
               <td
                 key={i}
-                className={`px-2 py-2 text-right ${value < 0 ? "text-red-600" : ""}`}
+                className={`px-2 py-2 text-right ${
+                  value >= 0 ? "text-green-700" : "text-red-700"
+                }`}
               >
                 {formatCurrency(value)}
               </td>
             ))}
             <td
               className={`px-3 py-2 text-right ${
-                (projectedBalances.at(-1) ?? 0) < 0 ? "text-red-600" : ""
+                (projectedBalances.at(-1) ?? 0) >= 0 ? "text-green-700" : "text-red-700"
               }`}
             >
               {projectedBalances.length > 0
