@@ -30,10 +30,11 @@ export async function updateMappingRule(
 
   const { data: existingRule } = await supabase
     .from("text_mappings")
-    .select("comment")
+    .select("comment, is_extraordinary")
     .eq("id", data.id)
     .single();
   const previousComment = existingRule?.comment ?? null;
+  const previousIsExtraordinary = existingRule?.is_extraordinary ?? false;
 
   const { error } = await supabase
     .from("text_mappings")
@@ -53,22 +54,17 @@ export async function updateMappingRule(
     return { status: "error", message: "Kunne ikke gemme reglen." };
   }
 
-  // Slå kategori og ekstraordinær-status igennem på alle posteringer der
-  // allerede er tildelt denne regel, så en ændring vises konsekvent overalt
-  // med det samme - ikke kun på nye posteringer der importeres fremover.
-  // Kommentaren cascades kun når reglen samler til én post - ellers ville det
-  // overskrive evt. individuelle navne man har givet enkelte posteringer
-  // under "Vis hver for sig".
+  // Slå kategori igennem på alle posteringer der allerede er tildelt denne
+  // regel, så en ændring vises konsekvent overalt med det samme - ikke kun på
+  // nye posteringer der importeres fremover. Kommentaren cascades kun når
+  // reglen samler til én post - ellers ville det overskrive evt. individuelle
+  // navne man har givet enkelte posteringer under "Vis hver for sig".
   const { error: cascadeError } = await supabase
     .from("transactions")
     .update(
       data.displayMode === "grouped"
-        ? {
-            comment: data.comment,
-            category_id: data.categoryId,
-            is_extraordinary: data.isExtraordinary,
-          }
-        : { category_id: data.categoryId, is_extraordinary: data.isExtraordinary },
+        ? { comment: data.comment, category_id: data.categoryId }
+        : { category_id: data.categoryId },
     )
     .eq("mapping_id", data.id);
 
@@ -78,6 +74,26 @@ export async function updateMappingRule(
       cascadeError.code,
       cascadeError.message,
     );
+  }
+
+  // Ekstraordinær-status cascades kun til posteringer der stadig har reglens
+  // tidligere værdi - en postering man selv har rettet manuelt (fx en fejl
+  // reglen først markerede den forkert), bliver ikke overskrevet, når man
+  // bagefter redigerer reglen af en helt anden grund.
+  if (data.isExtraordinary !== previousIsExtraordinary) {
+    const { error: extraordinaryCascadeError } = await supabase
+      .from("transactions")
+      .update({ is_extraordinary: data.isExtraordinary })
+      .eq("mapping_id", data.id)
+      .eq("is_extraordinary", previousIsExtraordinary);
+
+    if (extraordinaryCascadeError) {
+      console.error(
+        "updateMappingRule: kunne ikke opdatere ekstraordinær-status:",
+        extraordinaryCascadeError.code,
+        extraordinaryCascadeError.message,
+      );
+    }
   }
 
   // Skifter reglen til "vis hver for sig", skal den tidligere fælles

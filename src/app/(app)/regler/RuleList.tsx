@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Category, TextMappingRow } from "@/lib/types/db";
 import type { MatchType } from "@/lib/mapping/types";
+import { formatCurrency } from "@/lib/format";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { deleteMappingRule, setMappingRuleActive, updateMappingRule } from "./actions";
 
@@ -30,14 +31,22 @@ function amountRangeLabel(
   return `op til ${maxAmount} kr.`;
 }
 
+function matchAmountLabel(range: { min: number; max: number } | undefined): string | null {
+  if (!range) return null;
+  if (range.min === range.max) return formatCurrency(range.min);
+  return `${formatCurrency(range.min)} – ${formatCurrency(range.max)}`;
+}
+
 export function RuleList({
   rules,
   categories,
   matchCounts,
+  matchAmountRanges,
 }: {
   rules: TextMappingRow[];
   categories: Category[];
   matchCounts: Record<string, number>;
+  matchAmountRanges: Record<string, { min: number; max: number }>;
 }) {
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -138,6 +147,8 @@ export function RuleList({
                 )}
                 <p className="mt-1 text-xs text-stone-400">
                   {matchCounts[rule.id] ?? 0} posteringer matchet
+                  {matchAmountLabel(matchAmountRanges[rule.id]) &&
+                    ` · ${matchAmountLabel(matchAmountRanges[rule.id])}`}
                   {!rule.active &&
                     " · indgår ikke i prognose eller alarmer om manglende poster"}
                 </p>

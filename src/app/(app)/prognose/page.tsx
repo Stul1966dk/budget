@@ -99,6 +99,13 @@ export default async function PrognosePage({
   const trends = computeCategoryTrends(transactions, categories).filter(
     (t) => t.direction !== "stable",
   );
+  const extraordinaryTransactions = transactions
+    .filter((t) => t.is_extraordinary)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const extraordinaryTotal = extraordinaryTransactions.reduce(
+    (sum, t) => sum + t.amount,
+    0,
+  );
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">
@@ -121,6 +128,31 @@ export default async function PrognosePage({
           {currentBalance !== null ? formatCurrency(currentBalance) : "Ukendt"}
         </span>
       </div>
+
+      {extraordinaryTransactions.length > 0 && (
+        <details className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <summary className="cursor-pointer font-medium">
+            Ekstraordinære poster i alt: {formatCurrency(extraordinaryTotal)} (
+            {extraordinaryTransactions.length}) - holdes udenfor tallene ovenfor
+          </summary>
+          <ul className="mt-2 space-y-1">
+            {extraordinaryTransactions.map((t) => (
+              <li key={t.id} className="flex justify-between gap-2">
+                <span className="truncate">
+                  {formatDateDa(t.date)} · {t.comment ?? t.raw_text}
+                </span>
+                <span className="whitespace-nowrap">{formatCurrency(t.amount)}</span>
+              </li>
+            ))}
+          </ul>
+          <a
+            href="/maaned?filter=ekstraordinaere"
+            className="mt-2 inline-block text-xs font-medium underline"
+          >
+            Se og redigér på Oversigt
+          </a>
+        </details>
+      )}
 
       <div className="mt-4 rounded-xl border border-stone-200 bg-white p-4">
         <div className="flex items-start justify-between gap-3">

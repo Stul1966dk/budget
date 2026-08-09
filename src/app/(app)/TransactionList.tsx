@@ -13,11 +13,11 @@ type PendingRule = { id: string; matchCount: number; pattern: string };
 export function TransactionList({
   transactions,
   categories,
-  showOnlyUnmatched,
+  filterMode,
 }: {
   transactions: TransactionRow[];
   categories: Category[];
-  showOnlyUnmatched: boolean;
+  filterMode: "alle" | "umatchede" | "ekstraordinaere";
 }) {
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -44,15 +44,48 @@ export function TransactionList({
 
   return (
     <div className="mt-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-stone-900">Posteringer</h2>
-        <a
-          href={showOnlyUnmatched ? "?" : "?filter=umatchede"}
-          className="text-xs font-medium text-stone-500 underline hover:text-stone-900"
-        >
-          {showOnlyUnmatched ? "Vis alle" : "Vis kun ukategoriserede"}
-        </a>
+        <div className="flex flex-wrap gap-3">
+          <a
+            href="?"
+            className={`text-xs font-medium underline ${
+              filterMode === "alle"
+                ? "text-stone-900"
+                : "text-stone-500 hover:text-stone-900"
+            }`}
+          >
+            Alle
+          </a>
+          <a
+            href="?filter=umatchede"
+            className={`text-xs font-medium underline ${
+              filterMode === "umatchede"
+                ? "text-stone-900"
+                : "text-stone-500 hover:text-stone-900"
+            }`}
+          >
+            Ukategoriserede
+          </a>
+          <a
+            href="?filter=ekstraordinaere"
+            className={`text-xs font-medium underline ${
+              filterMode === "ekstraordinaere"
+                ? "text-stone-900"
+                : "text-stone-500 hover:text-stone-900"
+            }`}
+          >
+            Ekstraordinære (alle måneder)
+          </a>
+        </div>
       </div>
+
+      {filterMode === "ekstraordinaere" && (
+        <p className="mt-2 text-xs text-stone-400">
+          Viser ekstraordinære posteringer på tværs af alle måneder, uanset
+          hvilken måned der er valgt ovenfor.
+        </p>
+      )}
 
       {transactions.length === 0 ? (
         <p className="mt-3 text-sm text-stone-400">Ingen posteringer at vise.</p>
@@ -86,6 +119,11 @@ export function TransactionList({
                       ) : (
                         <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-500">
                           Ukategoriseret
+                        </span>
+                      )}
+                      {t.is_extraordinary && (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                          Ekstraordinær
                         </span>
                       )}
                     </div>

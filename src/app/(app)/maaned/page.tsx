@@ -64,7 +64,23 @@ export default async function DashboardPage({
   if (!availableMonths.includes(monthKey)) availableMonths.push(monthKey);
   availableMonths.sort().reverse();
 
-  const showOnlyUnmatched = params.filter === "umatchede";
+  const filterMode: "alle" | "umatchede" | "ekstraordinaere" =
+    params.filter === "umatchede"
+      ? "umatchede"
+      : params.filter === "ekstraordinaere"
+        ? "ekstraordinaere"
+        : "alle";
+  const showOnlyUnmatched = filterMode === "umatchede";
+
+  let extraordinaryAllTime: TransactionRow[] = [];
+  if (filterMode === "ekstraordinaere") {
+    const { data: extraordinaryAllTimeData } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("is_extraordinary", true)
+      .order("date", { ascending: false });
+    extraordinaryAllTime = (extraordinaryAllTimeData ?? []) as TransactionRow[];
+  }
 
   const ordinary = allTransactions.filter((t) => !t.is_extraordinary);
   const extraordinary = allTransactions.filter((t) => t.is_extraordinary);
@@ -100,9 +116,12 @@ export default async function DashboardPage({
     }))
     .sort((a, b) => b.sum - a.sum);
 
-  const visibleTransactions = showOnlyUnmatched
-    ? allTransactions.filter((t) => t.category_id === null)
-    : allTransactions;
+  const visibleTransactions =
+    filterMode === "ekstraordinaere"
+      ? extraordinaryAllTime
+      : filterMode === "umatchede"
+        ? allTransactions.filter((t) => t.category_id === null)
+        : allTransactions;
 
   const transactionsWithBalance = allTransactions.filter(
     (t): t is TransactionRow & { balance: number } => t.balance !== null,
@@ -172,7 +191,7 @@ export default async function DashboardPage({
       <TransactionList
         transactions={visibleTransactions}
         categories={categories}
-        showOnlyUnmatched={showOnlyUnmatched}
+        filterMode={filterMode}
       />
     </div>
   );

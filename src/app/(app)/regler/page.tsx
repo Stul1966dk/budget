@@ -24,7 +24,10 @@ export default async function ReglerPage({
         .select("*")
         .order("created_at", { ascending: false }),
       supabase.from("categories").select("*").order("sort_order"),
-      supabase.from("transactions").select("mapping_id").not("mapping_id", "is", null),
+      supabase
+        .from("transactions")
+        .select("mapping_id, amount")
+        .not("mapping_id", "is", null),
     ]);
 
   const allRules = (rulesData ?? []) as TextMappingRow[];
@@ -44,9 +47,15 @@ export default async function ReglerPage({
       : statusFilteredRules.filter((r) => r.category_id === categoryFilter);
 
   const matchCounts: Record<string, number> = {};
+  const matchAmountRanges: Record<string, { min: number; max: number }> = {};
   for (const row of mappingIdsData ?? []) {
     if (!row.mapping_id) continue;
     matchCounts[row.mapping_id] = (matchCounts[row.mapping_id] ?? 0) + 1;
+    const amount = Math.abs(row.amount);
+    const existing = matchAmountRanges[row.mapping_id];
+    matchAmountRanges[row.mapping_id] = existing
+      ? { min: Math.min(existing.min, amount), max: Math.max(existing.max, amount) }
+      : { min: amount, max: amount };
   }
 
   return (
@@ -93,7 +102,12 @@ export default async function ReglerPage({
         <CategoryFilter categories={categories} />
       </div>
 
-      <RuleList rules={rules} categories={categories} matchCounts={matchCounts} />
+      <RuleList
+        rules={rules}
+        categories={categories}
+        matchCounts={matchCounts}
+        matchAmountRanges={matchAmountRanges}
+      />
     </div>
   );
 }
