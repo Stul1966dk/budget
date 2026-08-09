@@ -8,7 +8,10 @@ export default async function ReglerPage({
   searchParams: Promise<{ filter?: string }>;
 }) {
   const params = await searchParams;
-  const showAll = params.filter === "alle";
+  const filter =
+    params.filter === "alle" || params.filter === "afsluttede"
+      ? params.filter
+      : "aktive";
 
   const supabase = await createClient();
 
@@ -25,7 +28,13 @@ export default async function ReglerPage({
   const allRules = (rulesData ?? []) as TextMappingRow[];
   const categories = (categoriesData ?? []) as Category[];
   const activeCount = allRules.filter((r) => r.active).length;
-  const rules = showAll ? allRules : allRules.filter((r) => r.active);
+  const inactiveCount = allRules.length - activeCount;
+  const rules =
+    filter === "alle"
+      ? allRules
+      : filter === "afsluttede"
+        ? allRules.filter((r) => !r.active)
+        : allRules.filter((r) => r.active);
 
   const matchCounts: Record<string, number> = {};
   for (const row of mappingIdsData ?? []) {
@@ -45,7 +54,7 @@ export default async function ReglerPage({
         <a
           href="?"
           className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-            !showAll
+            filter === "aktive"
               ? "bg-forest-900 text-white"
               : "text-stone-600 hover:bg-stone-100"
           }`}
@@ -53,9 +62,19 @@ export default async function ReglerPage({
           Aktive ({activeCount})
         </a>
         <a
+          href="?filter=afsluttede"
+          className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+            filter === "afsluttede"
+              ? "bg-forest-900 text-white"
+              : "text-stone-600 hover:bg-stone-100"
+          }`}
+        >
+          Afsluttede ({inactiveCount})
+        </a>
+        <a
           href="?filter=alle"
           className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-            showAll
+            filter === "alle"
               ? "bg-forest-900 text-white"
               : "text-stone-600 hover:bg-stone-100"
           }`}
