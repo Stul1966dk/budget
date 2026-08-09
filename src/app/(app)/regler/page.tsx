@@ -47,15 +47,20 @@ export default async function ReglerPage({
       : statusFilteredRules.filter((r) => r.category_id === categoryFilter);
 
   const matchCounts: Record<string, number> = {};
-  const matchAmountRanges: Record<string, { min: number; max: number }> = {};
+  const amountCountsByRule: Record<string, Map<number, number>> = {};
   for (const row of mappingIdsData ?? []) {
     if (!row.mapping_id) continue;
     matchCounts[row.mapping_id] = (matchCounts[row.mapping_id] ?? 0) + 1;
     const amount = Math.abs(row.amount);
-    const existing = matchAmountRanges[row.mapping_id];
-    matchAmountRanges[row.mapping_id] = existing
-      ? { min: Math.min(existing.min, amount), max: Math.max(existing.max, amount) }
-      : { min: amount, max: amount };
+    if (!amountCountsByRule[row.mapping_id]) amountCountsByRule[row.mapping_id] = new Map();
+    const amounts = amountCountsByRule[row.mapping_id];
+    amounts.set(amount, (amounts.get(amount) ?? 0) + 1);
+  }
+  const matchAmounts: Record<string, { amount: number; count: number }[]> = {};
+  for (const [ruleId, amounts] of Object.entries(amountCountsByRule)) {
+    matchAmounts[ruleId] = Array.from(amounts.entries())
+      .map(([amount, count]) => ({ amount, count }))
+      .sort((a, b) => a.amount - b.amount);
   }
 
   return (
@@ -106,7 +111,7 @@ export default async function ReglerPage({
         rules={rules}
         categories={categories}
         matchCounts={matchCounts}
-        matchAmountRanges={matchAmountRanges}
+        matchAmounts={matchAmounts}
       />
     </div>
   );
