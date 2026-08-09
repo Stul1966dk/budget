@@ -1,11 +1,21 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Category, TransactionRow } from "@/lib/types/db";
+import type { Category, TextMappingRow, TransactionRow } from "@/lib/types/db";
 import { YearSelector } from "./aar/YearSelector";
 import { YearTable, type YearTableCategory } from "./aar/YearTable";
 
 type YearTransaction = Pick<
   TransactionRow,
-  "date" | "amount" | "category_id" | "is_extraordinary" | "raw_text" | "comment"
+  | "date"
+  | "amount"
+  | "category_id"
+  | "is_extraordinary"
+  | "raw_text"
+  | "comment"
+  | "mapping_id"
+>;
+type YearMappingRule = Pick<
+  TextMappingRow,
+  "id" | "comment" | "match_pattern" | "display_mode"
 >;
 
 export default async function AarPage({
@@ -30,22 +40,29 @@ export default async function AarPage({
   const start = `${year}-01-01`;
   const end = `${year}-12-31`;
 
-  const [{ data: categoriesData }, { data: transactionsData }] = await Promise.all([
-    supabase.from("categories").select("*").order("sort_order"),
-    supabase
-      .from("transactions")
-      .select("date, amount, category_id, is_extraordinary, raw_text, comment")
-      .gte("date", start)
-      .lte("date", end)
-      .eq("is_extraordinary", false),
-  ]);
+  const [{ data: categoriesData }, { data: transactionsData }, { data: mappingsData }] =
+    await Promise.all([
+      supabase.from("categories").select("*").order("sort_order"),
+      supabase
+        .from("transactions")
+        .select(
+          "date, amount, category_id, is_extraordinary, raw_text, comment, mapping_id",
+        )
+        .gte("date", start)
+        .lte("date", end)
+        .eq("is_extraordinary", false),
+      supabase.from("text_mappings").select("id, comment, match_pattern, display_mode"),
+    ]);
 
   const categories = (categoriesData ?? []) as Category[];
   const transactions = (transactionsData ?? []) as YearTransaction[];
   const categoryMap = new Map(categories.map((c) => [c.id, c]));
+  const ruleMap = new Map(
+    ((mappingsData ?? []) as YearMappingRule[]).map((m) => [m.id, m]),
+  );
 
   const categoryGrid = new Map<string, number[]>();
-  const itemGrid = new Map<string, Map<string, number[]>>();
+  const itemGrid = new Map<string, Map<string, { label: string; months: number[] }>>();
 
   function bucket(map: Map<string, number[]>, key: string): number[] {
     let months = map.get(key);
@@ -66,27 +83,39 @@ export default async function AarPage({
 
     if (!itemGrid.has(categoryKey)) itemGrid.set(categoryKey, new Map());
     const items = itemGrid.get(categoryKey)!;
-    // Grupperes efter den viste tekst (kommentar, ellers rå tekst) - ikke
-    // efter mapping-regel. Flere poster kan dele samme regel (fx "Oister")
-    // men være forskellige abonnementer med skiftende suffiks hver måned -
-    // de skal vises hver for sig, indtil brugeren selv sætter en kommentar
-    // der adskiller dem. Omvendt skal to poster med samme kommentar altid
-    // vises som én række, uanset om de kom fra samme regel eller ej.
-    const itemLabel = t.comment ?? t.raw_text;
-    if (!items.has(itemLabel)) {
-      items.set(itemLabel, new Array(12).fill(0));
+
+    // Grupperingen styres af reglens "Visning" (se Regler-siden), ikke af
+    // hardcodet logik her: "Saml til én post" grupperer efter regel-id, så
+    // alle matches vises som én linje. "Vis hver for sig" grupperer efter
+    // postering (kommentar, ellers rå tekst), så hver postering forbliver sin
+    // egen linje - typisk brugt til poster der ikke kan skelnes automatisk
+    // (fx flere abonnementer under samme banktekst med skiftende suffiks). En
+    // manuel kommentar der afviger fra reglens, vinder altid og adskiller den
+    // enkelte postering, uanset reglens Visning-indstilling.
+    const rule = t.mapping_id ? ruleMap.get(t.mapping_id) : undefined;
+    const isManualOverride =
+      rule !== undefined && t.comment !== null && t.comment !== rule.comment;
+    const useGroupedKey = rule !== undefined && rule.display_mode === "grouped" && !isManualOverride;
+
+    const itemKey = useGroupedKey ? rule.id : t.comment ?? t.raw_text;
+    const itemLabel = useGroupedKey
+      ? rule.comment ?? rule.match_pattern
+      : t.comment ?? t.raw_text;
+
+    if (!items.has(itemKey)) {
+      items.set(itemKey, { label: itemLabel, months: new Array(12).fill(0) });
     }
-    items.get(itemLabel)![monthIndex] += amount;
+    items.get(itemKey)!.months[monthIndex] += amount;
   }
 
   const rows: YearTableCategory[] = Array.from(categoryGrid.entries())
     .map(([key, months]) => {
       const items = Array.from((itemGrid.get(key) ?? new Map()).entries())
-        .map(([label, itemMonths]) => ({
-          key: label,
-          label,
-          months: itemMonths,
-          total: itemMonths.reduce((sum: number, v: number) => sum + v, 0),
+        .map(([itemKey, item]) => ({
+          key: itemKey,
+          label: item.label,
+          months: item.months,
+          total: item.months.reduce((sum: number, v: number) => sum + v, 0),
         }))
         .sort((a, b) => b.total - a.total);
 

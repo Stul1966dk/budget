@@ -12,6 +12,7 @@ const updateSchema = z.object({
   categoryId: z.string().uuid().nullable(),
   minAmount: z.number().nonnegative().nullable(),
   maxAmount: z.number().nonnegative().nullable(),
+  displayMode: z.enum(["grouped", "individual"]),
 });
 
 export type UpdateMappingRuleInput = z.infer<typeof updateSchema>;
@@ -35,6 +36,7 @@ export async function updateMappingRule(
       category_id: data.categoryId,
       min_amount: data.minAmount,
       max_amount: data.maxAmount,
+      display_mode: data.displayMode,
     })
     .eq("id", data.id);
 
@@ -42,12 +44,18 @@ export async function updateMappingRule(
     return { status: "error", message: "Kunne ikke gemme reglen." };
   }
 
-  // Slå navn/kategori igennem på alle posteringer der allerede er tildelt
-  // denne regel, så en omdøbning vises konsekvent overalt med det samme -
-  // ikke kun på nye posteringer der importeres fremover.
+  // Slå kategori igennem på alle posteringer der allerede er tildelt denne
+  // regel, så en ændring vises konsekvent overalt med det samme - ikke kun på
+  // nye posteringer der importeres fremover. Kommentaren cascades kun når
+  // reglen samler til én post - ellers ville det overskrive evt. individuelle
+  // navne man har givet enkelte posteringer under "Vis hver for sig".
   const { error: cascadeError } = await supabase
     .from("transactions")
-    .update({ comment: data.comment, category_id: data.categoryId })
+    .update(
+      data.displayMode === "grouped"
+        ? { comment: data.comment, category_id: data.categoryId }
+        : { category_id: data.categoryId },
+    )
     .eq("mapping_id", data.id);
 
   if (cascadeError) {

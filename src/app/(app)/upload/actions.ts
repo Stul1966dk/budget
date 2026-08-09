@@ -63,7 +63,7 @@ export async function importCsvFile(formData: FormData): Promise<ImportResult> {
   const { data: mappingsData, error: mappingsError } = await supabase
     .from("text_mappings")
     .select(
-      "id, match_pattern, match_type, comment, category_id, min_amount, max_amount, active",
+      "id, match_pattern, match_type, comment, category_id, min_amount, max_amount, display_mode, active",
     );
 
   if (mappingsError) {
@@ -83,6 +83,7 @@ export async function importCsvFile(formData: FormData): Promise<ImportResult> {
     categoryId: m.category_id,
     minAmount: m.min_amount,
     maxAmount: m.max_amount,
+    displayMode: m.display_mode,
   }));
 
   const discontinuedMappingIds = new Set(
@@ -104,7 +105,7 @@ export async function importCsvFile(formData: FormData): Promise<ImportResult> {
       status: row.status,
       reconciled: row.reconciled,
       row_hash: row.rowHash,
-      comment: bestRule?.comment ?? null,
+      comment: bestRule?.displayMode === "grouped" ? bestRule.comment : null,
       category_id: bestRule?.categoryId ?? null,
       mapping_id: bestRule?.id ?? null,
       is_extraordinary: false,

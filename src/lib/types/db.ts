@@ -13,6 +13,7 @@ export type TextMappingRow = {
   category_id: string | null;
   min_amount: number | null;
   max_amount: number | null;
+  display_mode: "grouped" | "individual";
   active: boolean;
   created_at: string;
 };

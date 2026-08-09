@@ -10,6 +10,7 @@ const rule: MappingRule = {
   categoryId: "cat-mobil",
   minAmount: null,
   maxAmount: null,
+  displayMode: "grouped",
 };
 
 const untouched = (overrides: Partial<MappableTransaction>): MappableTransaction => ({
@@ -66,6 +67,16 @@ describe("computeAutoMappingUpdate", () => {
     expect(
       computeAutoMappingUpdate(untouched({ amount: -137.85 }), rangedRule),
     ).not.toBeNull();
+  });
+
+  it("sætter ikke kommentar fra en regel med Visning 'individual' - hver postering skal vises for sig", () => {
+    const individualRule: MappingRule = { ...rule, displayMode: "individual" };
+    const result = computeAutoMappingUpdate(untouched({}), individualRule);
+    expect(result).toEqual({
+      comment: null,
+      categoryId: "cat-mobil",
+      mappingId: "rule-1",
+    });
   });
 });
 

@@ -107,6 +107,11 @@ export function RuleList({
                       {amountRangeLabel(rule.min_amount, rule.max_amount)}
                     </span>
                   )}
+                  {rule.display_mode === "individual" && (
+                    <span className="rounded bg-stone-100 px-2 py-0.5 text-xs text-stone-600">
+                      Vises hver for sig
+                    </span>
+                  )}
                   {category && (
                     <span
                       className={`rounded-full px-2 py-0.5 text-[11px] font-medium text-white ${
@@ -207,6 +212,9 @@ function RuleEditForm({
   const [maxAmount, setMaxAmount] = useState(
     rule.max_amount !== null ? String(rule.max_amount) : "",
   );
+  const [displayMode, setDisplayMode] = useState<"grouped" | "individual">(
+    rule.display_mode,
+  );
   const [isSaving, setIsSaving] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -220,6 +228,7 @@ function RuleEditForm({
       categoryId: categoryId || null,
       minAmount: minAmount.trim() ? Number(minAmount.trim().replace(",", ".")) : null,
       maxAmount: maxAmount.trim() ? Number(maxAmount.trim().replace(",", ".")) : null,
+      displayMode,
     });
     setIsSaving(false);
     onSaved();
@@ -284,6 +293,25 @@ function RuleEditForm({
             className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
           />
         </div>
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-stone-600">
+          Visning
+        </label>
+        <select
+          value={displayMode}
+          onChange={(e) => setDisplayMode(e.target.value as "grouped" | "individual")}
+          className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
+        >
+          <option value="grouped">Saml til én post</option>
+          <option value="individual">Vis hver for sig</option>
+        </select>
+        <p className="mt-1 text-xs text-stone-400">
+          Brug &quot;Vis hver for sig&quot; til poster der reelt er
+          forskellige ting, men ikke kan skelnes automatisk (fx flere
+          abonnementer under samme banktekst) - så kan du selv navngive hver
+          enkelt postering.
+        </p>
       </div>
       <div className="flex gap-2">
         <button

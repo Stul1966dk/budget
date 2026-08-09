@@ -35,7 +35,7 @@ export function computeAutoMappingUpdate(
   if (!ruleMatchesTransaction(transaction, rule)) return null;
 
   return {
-    comment: rule.comment,
+    comment: rule.displayMode === "grouped" ? rule.comment : null,
     categoryId: rule.categoryId,
     mappingId: rule.id,
   };

@@ -1,4 +1,5 @@
 export type MatchType = "prefix" | "contains" | "exact";
+export type DisplayMode = "grouped" | "individual";
 
 export type MappingRule = {
   id: string;
@@ -11,6 +12,10 @@ export type MappingRule = {
    * flere forskellige poster der deler identisk banktekst. */
   minAmount: number | null;
   maxAmount: number | null;
+  /** "grouped": matches deler reglens kommentar og vises som én post.
+   * "individual": reglen sætter ikke kommentar på matches, så hver postering
+   * vises for sig via sin rå tekst, indtil den evt. navngives manuelt. */
+  displayMode: DisplayMode;
 };
 
 export type MappableTransaction = {

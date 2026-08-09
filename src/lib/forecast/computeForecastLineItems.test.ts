@@ -33,6 +33,7 @@ function makeMapping(overrides: Partial<TextMappingRow>): TextMappingRow {
     category_id: null,
     min_amount: null,
     max_amount: null,
+    display_mode: "grouped",
     active: true,
     created_at: "2026-01-01T00:00:00Z",
     ...overrides,

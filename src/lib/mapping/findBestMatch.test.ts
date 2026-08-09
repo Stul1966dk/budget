@@ -10,6 +10,7 @@ const rule = (overrides: Partial<MappingRule>): MappingRule => ({
   categoryId: null,
   minAmount: null,
   maxAmount: null,
+  displayMode: "grouped",
   ...overrides,
 });
 

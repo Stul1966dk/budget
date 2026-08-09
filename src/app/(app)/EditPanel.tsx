@@ -14,6 +14,7 @@ export type EditPanelValues = {
   matchType?: MatchType;
   minAmount?: number | null;
   maxAmount?: number | null;
+  displayMode?: "grouped" | "individual";
 };
 
 export function EditPanel({
@@ -43,6 +44,7 @@ export function EditPanel({
   const transactionMagnitude = Math.round(Math.abs(transaction.amount) * 100) / 100;
   const [minAmount, setMinAmount] = useState(String(transactionMagnitude - 2));
   const [maxAmount, setMaxAmount] = useState(String(transactionMagnitude + 2));
+  const [displayMode, setDisplayMode] = useState<"grouped" | "individual">("grouped");
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -55,6 +57,7 @@ export function EditPanel({
       matchType: createRule ? matchType : undefined,
       minAmount: createRule && useAmountRange && minAmount.trim() ? Number(minAmount) : null,
       maxAmount: createRule && useAmountRange && maxAmount.trim() ? Number(maxAmount) : null,
+      displayMode: createRule ? displayMode : undefined,
     });
   }
 
@@ -196,6 +199,26 @@ export function EditPanel({
                 </div>
               </div>
             )}
+
+            <div>
+              <label
+                htmlFor="displayMode"
+                className="block text-xs font-medium text-stone-600"
+              >
+                Visning
+              </label>
+              <select
+                id="displayMode"
+                value={displayMode}
+                onChange={(e) =>
+                  setDisplayMode(e.target.value as "grouped" | "individual")
+                }
+                className="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm focus:border-stone-500 focus:outline-none"
+              >
+                <option value="grouped">Saml til én post</option>
+                <option value="individual">Vis hver for sig</option>
+              </select>
+            </div>
           </div>
         )}
 

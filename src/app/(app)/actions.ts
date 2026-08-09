@@ -16,6 +16,7 @@ const editSchema = z.object({
   matchType: z.enum(["prefix", "contains", "exact"]).optional(),
   minAmount: z.number().nonnegative().nullable().optional(),
   maxAmount: z.number().nonnegative().nullable().optional(),
+  displayMode: z.enum(["grouped", "individual"]).optional(),
 });
 
 export type SaveTransactionEditInput = z.infer<typeof editSchema>;
@@ -83,6 +84,7 @@ export async function saveTransactionEdit(
     const ruleComment = data.comment?.length ? data.comment : null;
     const minAmount = data.minAmount ?? null;
     const maxAmount = data.maxAmount ?? null;
+    const displayMode = data.displayMode ?? "grouped";
 
     const { data: ruleRow, error: ruleError } = await supabase
       .from("text_mappings")
@@ -93,6 +95,7 @@ export async function saveTransactionEdit(
         category_id: data.categoryId,
         min_amount: minAmount,
         max_amount: maxAmount,
+        display_mode: displayMode,
       })
       .select("id")
       .single();
@@ -115,6 +118,7 @@ export async function saveTransactionEdit(
         categoryId: data.categoryId,
         minAmount,
         maxAmount,
+        displayMode,
       };
       const matches = findRetroactiveMatches(rule, candidates);
       newRule = {
@@ -166,7 +170,9 @@ export async function applyRuleRetroactively(ruleId: string): Promise<{
 
   const { data: ruleRow, error: ruleError } = await supabase
     .from("text_mappings")
-    .select("id, match_pattern, match_type, comment, category_id, min_amount, max_amount")
+    .select(
+      "id, match_pattern, match_type, comment, category_id, min_amount, max_amount, display_mode",
+    )
     .eq("id", ruleId)
     .single();
 
@@ -182,6 +188,7 @@ export async function applyRuleRetroactively(ruleId: string): Promise<{
     categoryId: ruleRow.category_id,
     minAmount: ruleRow.min_amount,
     maxAmount: ruleRow.max_amount,
+    displayMode: ruleRow.display_mode,
   };
 
   const candidates = await fetchUnmappedCandidates(supabase);
@@ -192,7 +199,7 @@ export async function applyRuleRetroactively(ruleId: string): Promise<{
       supabase
         .from("transactions")
         .update({
-          comment: rule.comment,
+          comment: rule.displayMode === "grouped" ? rule.comment : null,
           category_id: rule.categoryId,
           mapping_id: rule.id,
         })
