@@ -5,6 +5,7 @@ import { YearTable, type YearTableCategory } from "./aar/YearTable";
 
 type YearTransaction = Pick<
   TransactionRow,
+  | "id"
   | "date"
   | "amount"
   | "category_id"
@@ -46,7 +47,7 @@ export default async function AarPage({
       supabase
         .from("transactions")
         .select(
-          "date, amount, category_id, is_extraordinary, raw_text, comment, mapping_id",
+          "id, date, amount, category_id, is_extraordinary, raw_text, comment, mapping_id",
         )
         .gte("date", start)
         .lte("date", end)
@@ -86,18 +87,25 @@ export default async function AarPage({
 
     // Grupperingen styres af reglens "Visning" (se Regler-siden), ikke af
     // hardcodet logik her: "Saml til én post" grupperer efter regel-id, så
-    // alle matches vises som én linje. "Vis hver for sig" grupperer efter
-    // postering (kommentar, ellers rå tekst), så hver postering forbliver sin
-    // egen linje - typisk brugt til poster der ikke kan skelnes automatisk
-    // (fx flere abonnementer under samme banktekst med skiftende suffiks). En
-    // manuel kommentar der afviger fra reglens, vinder altid og adskiller den
-    // enkelte postering, uanset reglens Visning-indstilling.
+    // alle matches vises som én linje. "Vis hver for sig" viser altid hver
+    // postering på sin egen linje (nøglen er posteringens eget id) - uanset
+    // om banken tilfældigvis bruger identisk rå tekst for flere posteringer
+    // (fx et fast medlemskab uden løbenummer). En manuel kommentar der
+    // afviger fra reglens, vinder altid og adskiller den enkelte postering,
+    // uanset reglens Visning-indstilling; flere posteringer man selv har
+    // givet samme navn, vises samlet.
     const rule = t.mapping_id ? ruleMap.get(t.mapping_id) : undefined;
     const isManualOverride =
       rule !== undefined && t.comment !== null && t.comment !== rule.comment;
     const useGroupedKey = rule !== undefined && rule.display_mode === "grouped" && !isManualOverride;
+    const useIndividualKey =
+      !useGroupedKey && rule !== undefined && rule.display_mode === "individual" && !isManualOverride;
 
-    const itemKey = useGroupedKey ? rule.id : t.comment ?? t.raw_text;
+    const itemKey = useGroupedKey
+      ? rule.id
+      : useIndividualKey
+        ? t.id
+        : t.comment ?? t.raw_text;
     const itemLabel = useGroupedKey
       ? rule.comment ?? rule.match_pattern
       : t.comment ?? t.raw_text;

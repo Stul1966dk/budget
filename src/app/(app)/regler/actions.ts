@@ -27,6 +27,13 @@ export async function updateMappingRule(
   const data = parsed.data;
   const supabase = await createClient();
 
+  const { data: existingRule } = await supabase
+    .from("text_mappings")
+    .select("comment")
+    .eq("id", data.id)
+    .single();
+  const previousComment = existingRule?.comment ?? null;
+
   const { error } = await supabase
     .from("text_mappings")
     .update({
@@ -64,6 +71,27 @@ export async function updateMappingRule(
       cascadeError.code,
       cascadeError.message,
     );
+  }
+
+  // Skifter reglen til "vis hver for sig", skal den tidligere fælles
+  // kommentar ryddes - ellers deler posteringerne stadig samme tekst og
+  // bliver stadig vist som én post. Kun posteringer der endnu har reglens
+  // tidligere kommentar rammes - en postering man selv har givet et andet,
+  // individuelt navn, bliver ikke rørt.
+  if (data.displayMode === "individual" && previousComment !== null) {
+    const { error: clearError } = await supabase
+      .from("transactions")
+      .update({ comment: null })
+      .eq("mapping_id", data.id)
+      .eq("comment", previousComment);
+
+    if (clearError) {
+      console.error(
+        "updateMappingRule: kunne ikke rydde tidligere fælles kommentar:",
+        clearError.code,
+        clearError.message,
+      );
+    }
   }
 
   revalidatePath("/");
