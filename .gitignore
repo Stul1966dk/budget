@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# .env.example indeholder kun pladsholdere og skal med i repoet - det er den
+# eneste dokumentation af hvilke miljøvariabler appen kræver.
+!.env.example
 
 # rigtige bank-CSV-eksporter indeholder personlige/finansielle data
 *.csv

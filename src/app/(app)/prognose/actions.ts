@@ -6,20 +6,17 @@ import { createClient } from "@/lib/supabase/server";
 import { refreshAdvisorInsight } from "@/lib/advisor/refreshAdvisorInsight";
 import { buildBudgetSnapshot } from "@/lib/advisor/buildBudgetSnapshot";
 import { chatWithAdvisor, type ChatMessage } from "@/lib/advisor/chatWithAdvisor";
+import { describeAdvisorError } from "@/lib/advisor/describeAdvisorError";
 
 export async function regenerateAdvice(): Promise<{
   status: "success" | "error";
   message?: string;
 }> {
   const supabase = await createClient();
-  const content = await refreshAdvisorInsight(supabase);
+  const result = await refreshAdvisorInsight(supabase);
 
-  if (!content) {
-    return {
-      status: "error",
-      message:
-        "Kunne ikke generere en ny anbefaling. Tjek at ANTHROPIC_API_KEY er sat, og prøv igen.",
-    };
+  if (result.status === "error") {
+    return { status: "error", message: result.message };
   }
 
   revalidatePath("/prognose");
@@ -140,10 +137,7 @@ export async function askAdvisor(
     answer = await chatWithAdvisor(snapshot, history);
   } catch (err) {
     console.error("askAdvisor: kunne ikke generere svar:", err);
-    return {
-      status: "error",
-      message: "Kunne ikke generere et svar. Tjek at ANTHROPIC_API_KEY er sat, og prøv igen.",
-    };
+    return { status: "error", message: describeAdvisorError(err) };
   }
 
   const { error: insertError } = await supabase.from("advisor_messages").insert([

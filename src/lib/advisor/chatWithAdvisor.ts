@@ -1,6 +1,10 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { formatMonthDa } from "@/lib/format";
-import { ADVISOR_MODEL } from "./generateAdvice";
+import {
+  ADVISOR_MAX_TOKENS,
+  ADVISOR_MODEL,
+  createAdvisorClient,
+  MaxTokensError,
+} from "./advisorClient";
 import type { BudgetSnapshot } from "./buildBudgetSnapshot";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
@@ -15,7 +19,7 @@ export async function chatWithAdvisor(
   snapshot: BudgetSnapshot,
   history: ChatMessage[],
 ): Promise<string> {
-  const client = new Anthropic();
+  const client = createAdvisorClient();
 
   const summary = {
     nuvaerende_saldo:
@@ -70,7 +74,7 @@ export async function chatWithAdvisor(
 
   const response = await client.messages.create({
     model: ADVISOR_MODEL,
-    max_tokens: 1024,
+    max_tokens: ADVISOR_MAX_TOKENS,
     ...(supportsEffort ? { output_config: { effort: "medium" as const } } : {}),
     system,
     messages: history.map((m) => ({ role: m.role, content: m.content })),
@@ -81,6 +85,14 @@ export async function chatWithAdvisor(
   }
 
   const textBlock = response.content.find((b) => b.type === "text");
+
+  // Rækkefølgen betyder noget: rammer svaret token-loftet under tænkningen,
+  // findes der slet ingen tekstblok - og så er "intet tekstsvar" en
+  // misvisende beskrivelse af et svar der bare blev for langt.
+  if (response.stop_reason === "max_tokens" && !textBlock) {
+    throw new MaxTokensError();
+  }
+
   if (!textBlock) {
     throw new Error("Intet tekstsvar fra Claude.");
   }

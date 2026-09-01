@@ -149,8 +149,15 @@ export async function importCsvFile(formData: FormData): Promise<ImportResult> {
 
   if (insertedRows.length > 0) {
     // Fejler stille - en ny anbefaling er en bonus, ikke en forudsætning for
-    // at importen skal tælle som gennemført.
-    await refreshAdvisorInsight(supabase);
+    // at importen skal tælle som gennemført. Årsagen logges dog, så en
+    // vedvarende fejl kan findes uden at skulle gætte fra rådgiver-siden.
+    const advisorResult = await refreshAdvisorInsight(supabase);
+    if (advisorResult.status === "error") {
+      console.error(
+        "importTransactions: ny anbefaling blev ikke opdateret:",
+        advisorResult.message,
+      );
+    }
   }
 
   revalidatePath("/");
