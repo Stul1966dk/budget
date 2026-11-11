@@ -164,6 +164,7 @@ export async function importCsvFile(formData: FormData): Promise<ImportResult> {
   revalidatePath("/maaned");
   revalidatePath("/regler");
   revalidatePath("/prognose");
+  revalidatePath("/upload");
 
   return {
     status: "success",
