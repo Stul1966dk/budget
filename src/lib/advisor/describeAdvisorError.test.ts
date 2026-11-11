@@ -30,7 +30,7 @@ describe("describeAdvisorError", () => {
     const message = describeAdvisorError(new MaxTokensError());
 
     expect(message).toContain("token-loftet");
-    expect(message).toContain("ANTHROPIC_MODEL");
+    expect(message).toContain("anden model");
     expect(message).not.toContain("ANTHROPIC_API_KEY");
   });
 

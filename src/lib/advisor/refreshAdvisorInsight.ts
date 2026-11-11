@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { buildBudgetSnapshot } from "./buildBudgetSnapshot";
 import { generateAdvice } from "./generateAdvice";
-import { ADVISOR_MODEL } from "./advisorClient";
 import { describeAdvisorError } from "./describeAdvisorError";
 
 export type AdvisorRefreshResult =
@@ -34,12 +33,12 @@ export async function refreshAdvisorInsight(
     content = await generateAdvice(snapshot);
   } catch (err) {
     console.error("refreshAdvisorInsight: kunne ikke generere anbefaling:", err);
-    return { status: "error", message: describeAdvisorError(err) };
+    return { status: "error", message: describeAdvisorError(err, snapshot.advisorModel) };
   }
 
   const { error } = await supabase.from("advisor_insights").insert({
     content,
-    model: ADVISOR_MODEL,
+    model: snapshot.advisorModel,
   });
 
   if (error) {

@@ -1,6 +1,51 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-export const ADVISOR_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-opus-5";
+/**
+ * Standardmodellen når husstanden ikke selv har valgt en under Rådgiver.
+ * Selve valget gemmes i forecast_settings.advisor_model - se
+ * resolveAdvisorModel.
+ */
+export const DEFAULT_ADVISOR_MODEL = process.env.ANTHROPIC_MODEL?.trim() || "claude-opus-5";
+
+export function resolveAdvisorModel(chosenModel: string | null | undefined): string {
+  return chosenModel?.trim() || DEFAULT_ADVISOR_MODEL;
+}
+
+export type AvailableModel = { id: string; displayName: string };
+
+/**
+ * Henter de modeller API-nøglen faktisk har adgang til, nyeste først (sådan
+ * returnerer API'et dem). Listen hentes live, så nye modeller dukker op i
+ * vælgeren uden kodeændring.
+ */
+export async function listAvailableModels(): Promise<AvailableModel[]> {
+  const client = createAdvisorClient();
+  const models: AvailableModel[] = [];
+  for await (const model of client.models.list({ limit: 100 })) {
+    models.push({ id: model.id, displayName: model.display_name });
+  }
+  return models;
+}
+
+/**
+ * `effort` er kun understøttet af nyere modeller - ældre (fx claude-haiku-4-5)
+ * afviser hele kaldet, hvis det sendes med. Spørger derfor API'et om modellens
+ * egenskaber, og falder tilbage til et navnetjek hvis det opslag fejler, så
+ * et fejlet opslag ikke vælter selve rådgivningen.
+ */
+export async function modelSupportsMediumEffort(
+  client: Anthropic,
+  model: string,
+): Promise<boolean> {
+  try {
+    const info = await client.models.retrieve(model);
+    const effort = info.capabilities?.effort;
+    if (effort) return effort.supported && effort.medium.supported;
+  } catch {
+    // Falder igennem til navnetjekket nedenfor.
+  }
+  return !model.includes("haiku");
+}
 
 /**
  * Tænkende modeller (fx claude-opus-5) bruger thinking-tokens af det SAMME

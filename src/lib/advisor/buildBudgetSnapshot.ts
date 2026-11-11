@@ -13,6 +13,7 @@ import { computeCurrentBalance } from "@/lib/forecast/computeCurrentBalance";
 import { applyIncomeOverride } from "@/lib/forecast/applyIncomeOverride";
 import { composeAlertMessage } from "@/lib/alerts/composeAlertMessage";
 import { extractMonthKey, getCurrentMonthKey } from "@/lib/month";
+import { resolveAdvisorModel } from "./advisorClient";
 
 export type BudgetSnapshot = {
   currentBalance: number | null;
@@ -26,6 +27,8 @@ export type BudgetSnapshot = {
   trends: CategoryTrend[];
   incomeOverride: number | null;
   advisorNotes: string | null;
+  /** Modellen husstanden har valgt under Rådgiver, ellers standarden. */
+  advisorModel: string;
   recentAlertMessages: string[];
 };
 
@@ -93,6 +96,7 @@ export async function buildBudgetSnapshot(
     trends,
     incomeOverride: settings?.monthly_income_override ?? null,
     advisorNotes: settings?.advisor_notes ?? null,
+    advisorModel: resolveAdvisorModel(settings?.advisor_model),
     recentAlertMessages,
   };
 }

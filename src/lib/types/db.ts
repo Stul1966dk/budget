@@ -78,5 +78,6 @@ export type ForecastSettingsRow = {
   id: string;
   monthly_income_override: number | null;
   advisor_notes: string | null;
+  advisor_model: string | null;
   updated_at: string;
 };

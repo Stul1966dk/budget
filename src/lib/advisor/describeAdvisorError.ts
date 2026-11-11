@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { ADVISOR_MODEL, MaxTokensError, MissingApiKeyError } from "./advisorClient";
+import { DEFAULT_ADVISOR_MODEL, MaxTokensError, MissingApiKeyError } from "./advisorClient";
 
 /**
  * Oversætter en fejl fra Claude-kaldet til en besked husstanden kan handle på.
@@ -10,7 +10,7 @@ import { ADVISOR_MODEL, MaxTokensError, MissingApiKeyError } from "./advisorClie
  * Kun fejl fra Anthropic-API'et beskrives her - databasefejl må aldrig sendes
  * rå til browseren og håndteres af kalderen.
  */
-export function describeAdvisorError(err: unknown): string {
+export function describeAdvisorError(err: unknown, model: string = DEFAULT_ADVISOR_MODEL): string {
   if (err instanceof MissingApiKeyError) {
     return (
       "ANTHROPIC_API_KEY er ikke sat i det miljø appen kører i. " +
@@ -20,8 +20,8 @@ export function describeAdvisorError(err: unknown): string {
 
   if (err instanceof MaxTokensError) {
     return (
-      `Claude nåede token-loftet før den fik skrevet et svar - modellen "${ADVISOR_MODEL}" ` +
-      "brugte hele budgettet på at tænke. Prøv igen, eller sæt ANTHROPIC_MODEL til en model uden tænkning."
+      `Claude nåede token-loftet før den fik skrevet et svar - modellen "${model}" ` +
+      "brugte hele budgettet på at tænke. Prøv igen, eller vælg en anden model under Rådgiver."
     );
   }
 
@@ -30,11 +30,11 @@ export function describeAdvisorError(err: unknown): string {
   }
 
   if (err instanceof Anthropic.PermissionDeniedError) {
-    return `API-nøglen har ikke adgang til modellen "${ADVISOR_MODEL}" (403).`;
+    return `API-nøglen har ikke adgang til modellen "${model}" (403).`;
   }
 
   if (err instanceof Anthropic.NotFoundError) {
-    return `Modellen "${ADVISOR_MODEL}" findes ikke. Tjek værdien af ANTHROPIC_MODEL.`;
+    return `Modellen "${model}" findes ikke (længere). Vælg en anden model under Rådgiver.`;
   }
 
   if (err instanceof Anthropic.RateLimitError) {
@@ -47,7 +47,7 @@ export function describeAdvisorError(err: unknown): string {
     if (err.message.toLowerCase().includes("credit balance")) {
       return "Anthropic-kontoen har ikke kredit nok til at kalde Claude. Fyld op på console.anthropic.com under Billing.";
     }
-    return `Claude afviste forespørgslen som ugyldig (400) - typisk fordi "${ADVISOR_MODEL}" ikke er et gyldigt modelnavn.`;
+    return `Claude afviste forespørgslen som ugyldig (400) - typisk fordi "${model}" ikke er et gyldigt modelnavn.`;
   }
 
   if (err instanceof Anthropic.InternalServerError) {

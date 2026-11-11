@@ -7,6 +7,7 @@ import { refreshAdvisorInsight } from "@/lib/advisor/refreshAdvisorInsight";
 import { buildBudgetSnapshot } from "@/lib/advisor/buildBudgetSnapshot";
 import { chatWithAdvisor, type ChatMessage } from "@/lib/advisor/chatWithAdvisor";
 import { describeAdvisorError } from "@/lib/advisor/describeAdvisorError";
+import { listAvailableModels } from "@/lib/advisor/advisorClient";
 
 export async function regenerateAdvice(): Promise<{
   status: "success" | "error";
@@ -101,6 +102,60 @@ export async function updateAdvisorNotes(
   return { status: "success" };
 }
 
+const advisorModelSchema = z.object({ model: z.string().trim().max(200).nullable() });
+
+/**
+ * Gemmer husstandens valg af sprogmodel. null/tom betyder "brug standarden".
+ * Modellen tjekkes mod den liste API-nøglen faktisk har adgang til, så et
+ * manipuleret formular-kald ikke kan gemme et modelnavn der får hvert
+ * efterfølgende rådgiverkald til at fejle.
+ */
+export async function updateAdvisorModel(
+  model: string | null,
+): Promise<{ status: "success" | "error"; message?: string }> {
+  const parsed = advisorModelSchema.safeParse({ model });
+  if (!parsed.success) {
+    return { status: "error", message: "Ugyldig model." };
+  }
+  const value = parsed.data.model?.length ? parsed.data.model : null;
+
+  if (value !== null) {
+    let availableIds: string[];
+    try {
+      availableIds = (await listAvailableModels()).map((m) => m.id);
+    } catch (err) {
+      console.error("updateAdvisorModel: kunne ikke hente modellisten:", err);
+      return { status: "error", message: describeAdvisorError(err, value) };
+    }
+    if (!availableIds.includes(value)) {
+      return { status: "error", message: `Modellen "${value}" er ikke tilgængelig.` };
+    }
+  }
+
+  const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from("forecast_settings")
+    .select("id")
+    .limit(1)
+    .maybeSingle();
+
+  const { error } = existing
+    ? await supabase
+        .from("forecast_settings")
+        .update({ advisor_model: value, updated_at: new Date().toISOString() })
+        .eq("id", existing.id)
+    : await supabase.from("forecast_settings").insert({ advisor_model: value });
+
+  if (error) {
+    console.error("updateAdvisorModel: kunne ikke gemme modellen:", error.code, error.message);
+    return { status: "error", message: "Kunne ikke gemme modelvalget." };
+  }
+
+  revalidatePath("/prognose");
+  return { status: "success" };
+}
+
 const askAdvisorSchema = z.object({ question: z.string().trim().min(1).max(2000) });
 
 export async function askAdvisor(
@@ -137,7 +192,7 @@ export async function askAdvisor(
     answer = await chatWithAdvisor(snapshot, history);
   } catch (err) {
     console.error("askAdvisor: kunne ikke generere svar:", err);
-    return { status: "error", message: describeAdvisorError(err) };
+    return { status: "error", message: describeAdvisorError(err, snapshot.advisorModel) };
   }
 
   const { error: insertError } = await supabase.from("advisor_messages").insert([

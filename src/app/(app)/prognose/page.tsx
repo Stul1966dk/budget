@@ -16,6 +16,12 @@ import type {
 import { RefreshAdviceButton } from "./RefreshAdviceButton";
 import { IncomeOverrideForm } from "./IncomeOverrideForm";
 import { AdvisorNotesForm } from "./AdvisorNotesForm";
+import { AdvisorModelSelect } from "./AdvisorModelSelect";
+import {
+  DEFAULT_ADVISOR_MODEL,
+  listAvailableModels,
+  type AvailableModel,
+} from "@/lib/advisor/advisorClient";
 import { AdvisorChat } from "./AdvisorChat";
 import { ForecastRangeSelector } from "./ForecastRangeSelector";
 import { ForecastSheet } from "./ForecastSheet";
@@ -60,6 +66,13 @@ export default async function PrognosePage({
       .select("id, comment, match_pattern, category_id, active"),
     supabase.from("advisor_messages").select("*").order("created_at"),
   ]);
+
+  // Modellisten må aldrig vælte siden - fejler opslaget (manglende nøgle,
+  // netværk ...), vises vælgeren bare deaktiveret.
+  const availableModels: AvailableModel[] | null = await listAvailableModels().catch((err) => {
+    console.error("PrognosePage: kunne ikke hente modellisten:", err);
+    return null;
+  });
 
   const transactions = (transactionsData ?? []) as TransactionRow[];
   const categories = (categoriesData ?? []) as Category[];
@@ -180,6 +193,11 @@ export default async function PrognosePage({
             anbefaling&quot; for at generere en nu.
           </p>
         )}
+        <AdvisorModelSelect
+          chosenModel={settings?.advisor_model ?? null}
+          defaultModel={DEFAULT_ADVISOR_MODEL}
+          models={availableModels}
+        />
         <AdvisorNotesForm notes={settings?.advisor_notes ?? null} />
       </div>
 

@@ -4,9 +4,9 @@ import type { ForecastMonth } from "@/lib/forecast/computeExpenseForecast";
 import type { CategoryTrend } from "@/lib/forecast/computeCategoryTrends";
 import {
   ADVISOR_MAX_TOKENS,
-  ADVISOR_MODEL,
   createAdvisorClient,
   MaxTokensError,
+  modelSupportsMediumEffort,
 } from "./advisorClient";
 
 export async function generateAdvice(input: {
@@ -16,6 +16,7 @@ export async function generateAdvice(input: {
   projectedBalances: number[];
   trends: CategoryTrend[];
   advisorNotes: string | null;
+  advisorModel: string;
 }): Promise<string> {
   const client = createAdvisorClient();
 
@@ -48,10 +49,7 @@ export async function generateAdvice(input: {
       })),
   };
 
-  // `effort` er kun understøttet af nyere modeller (fx claude-opus-5) - ikke
-  // af claude-haiku-4-5, som appen også kan konfigureres til via
-  // ANTHROPIC_MODEL. Udelades derfor i stedet for at fejle på ældre modeller.
-  const supportsEffort = !ADVISOR_MODEL.includes("haiku");
+  const supportsEffort = await modelSupportsMediumEffort(client, input.advisorModel);
 
   const baseSystemPrompt =
     "Du er en budgetrådgiver for en dansk husstand. Du får strukturerede tal fra husstandens eget budget-app og skal give 2-4 korte, konkrete anbefalinger på dansk. " +
@@ -70,7 +68,7 @@ export async function generateAdvice(input: {
     : baseSystemPrompt;
 
   const response = await client.messages.create({
-    model: ADVISOR_MODEL,
+    model: input.advisorModel,
     max_tokens: ADVISOR_MAX_TOKENS,
     ...(supportsEffort ? { output_config: { effort: "medium" as const } } : {}),
     system,

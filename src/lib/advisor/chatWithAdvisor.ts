@@ -1,9 +1,9 @@
 import { formatMonthDa } from "@/lib/format";
 import {
   ADVISOR_MAX_TOKENS,
-  ADVISOR_MODEL,
   createAdvisorClient,
   MaxTokensError,
+  modelSupportsMediumEffort,
 } from "./advisorClient";
 import type { BudgetSnapshot } from "./buildBudgetSnapshot";
 
@@ -53,7 +53,7 @@ export async function chatWithAdvisor(
     seneste_bemaerkninger: snapshot.recentAlertMessages,
   };
 
-  const supportsEffort = !ADVISOR_MODEL.includes("haiku");
+  const supportsEffort = await modelSupportsMediumEffort(client, snapshot.advisorModel);
 
   const baseSystemPrompt =
     "Du er en budget-sparringspartner for en dansk husstand, i en løbende samtale - ikke en engangsrapport. Du får strukturerede tal fra husstandens eget budget-app. " +
@@ -73,7 +73,7 @@ export async function chatWithAdvisor(
     : `${baseSystemPrompt}\n\nHusstandens tal:\n${JSON.stringify(summary, null, 2)}`;
 
   const response = await client.messages.create({
-    model: ADVISOR_MODEL,
+    model: snapshot.advisorModel,
     max_tokens: ADVISOR_MAX_TOKENS,
     ...(supportsEffort ? { output_config: { effort: "medium" as const } } : {}),
     system,
