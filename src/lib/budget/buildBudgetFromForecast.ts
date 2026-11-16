@@ -7,7 +7,8 @@ export type DraftBudgetLine = {
   kind: BudgetLineKind;
   label: string;
   categoryId: string | null;
-  mappingId: string | null;
+  mappingIds: string[];
+  includeCategory: boolean;
   amounts: number[];
 };
 
@@ -71,7 +72,8 @@ export function buildBudgetFromForecast(
       kind: "income",
       label: "Indbetalinger",
       categoryId: null,
-      mappingId: null,
+      mappingIds: sheet.incomeItems.map((i) => i.key).filter((k) => mappingById.has(k)),
+      includeCategory: false,
       amounts: Array.from({ length: 12 }, () => Math.round(incomeOverride)),
     });
   } else {
@@ -80,7 +82,8 @@ export function buildBudgetFromForecast(
         kind: "income",
         label: item.label,
         categoryId: item.categoryId,
-        mappingId: mappingById.has(item.key) ? item.key : null,
+        mappingIds: mappingById.has(item.key) ? [item.key] : [],
+        includeCategory: false,
         amounts: pickYear(item.months),
       });
     }
@@ -91,7 +94,8 @@ export function buildBudgetFromForecast(
       kind: "expense",
       label: item.label,
       categoryId: item.categoryId,
-      mappingId: mappingById.has(item.key) ? item.key : null,
+      mappingIds: mappingById.has(item.key) ? [item.key] : [],
+      includeCategory: false,
       amounts: pickYear(item.months),
     });
   }
@@ -101,7 +105,8 @@ export function buildBudgetFromForecast(
       kind: "expense",
       label: "Øvrige udgifter",
       categoryId: null,
-      mappingId: null,
+      mappingIds: [],
+      includeCategory: false,
       amounts: Array.from({ length: 12 }, () => Math.round(sheet.otherExpenseAverage)),
     });
   }

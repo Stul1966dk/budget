@@ -98,7 +98,10 @@ export type BudgetLineRow = {
   kind: BudgetLineKind;
   label: string;
   category_id: string | null;
-  mapping_id: string | null;
+  /** Mapping-regler hvis posteringer tæller som faktisk forbrug på posten. */
+  mapping_ids: string[];
+  /** Tæl også øvrige posteringer i postens kategori med som faktisk forbrug. */
+  include_category: boolean;
   /** 12 beløb uden fortegn, januar til december. */
   amounts: number[];
   sort_order: number;

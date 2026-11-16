@@ -41,3 +41,10 @@ export function formatMonthDa(monthKey: string): string {
 export function formatMonthShortDa(monthKey: string): string {
   return monthShortFormatter.format(new Date(`${monthKey}-01T00:00:00Z`));
 }
+
+const wholeKronerFormatter = new Intl.NumberFormat("da-DK", { maximumFractionDigits: 0 });
+
+/** Kompakt beløb i hele kroner uden "kr." - til tætte tabeller, fx "12.345". */
+export function formatKroner(value: number): string {
+  return wholeKronerFormatter.format(Math.round(value));
+}

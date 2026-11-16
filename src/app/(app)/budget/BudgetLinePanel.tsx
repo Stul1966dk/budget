@@ -6,6 +6,15 @@ import { formatAmountInput, parseAmountInput } from "@/lib/budget/amountInput";
 import type { BudgetLineKind, BudgetLineRow, Category } from "@/lib/types/db";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { deleteBudgetLine, saveBudgetLine } from "./actions";
+import { ActualLinkSection, type MappingOption } from "./ActualLinkSection";
+
+/** Startværdier til en ny post, fx oprettet ud fra ikke budgetterede posteringer. */
+export type NewLineDefaults = {
+  kind: BudgetLineKind;
+  label?: string;
+  categoryId?: string | null;
+  mappingIds?: string[];
+};
 
 type FillMode = "monthly" | "quarterly" | "halfyearly" | "yearly" | "spread";
 
@@ -24,8 +33,10 @@ export function BudgetLinePanel({
   budgetId,
   year,
   line,
-  defaultKind,
+  defaults,
   categories,
+  mappings,
+  mappingUsage,
   onClose,
   onSaved,
   onDeleted,
@@ -33,15 +44,24 @@ export function BudgetLinePanel({
   budgetId: string;
   year: number;
   line: BudgetLineRow | null;
-  defaultKind: BudgetLineKind;
+  defaults: NewLineDefaults;
   categories: Category[];
+  mappings: MappingOption[];
+  /** Regel-id -> navnet på den post, der allerede bruger reglen. */
+  mappingUsage: Map<string, { lineId: string; label: string }>;
   onClose: () => void;
   onSaved: (line: BudgetLineRow) => void;
   onDeleted: (lineId: string) => void;
 }) {
-  const [label, setLabel] = useState(line?.label ?? "");
-  const [kind, setKind] = useState<BudgetLineKind>(line?.kind ?? defaultKind);
-  const [categoryId, setCategoryId] = useState(line?.category_id ?? "");
+  const [label, setLabel] = useState(line?.label ?? defaults.label ?? "");
+  const [kind, setKind] = useState<BudgetLineKind>(line?.kind ?? defaults.kind);
+  const [categoryId, setCategoryId] = useState(
+    line?.category_id ?? defaults.categoryId ?? "",
+  );
+  const [mappingIds, setMappingIds] = useState<string[]>(
+    line?.mapping_ids ?? defaults.mappingIds ?? [],
+  );
+  const [includeCategory, setIncludeCategory] = useState(line?.include_category ?? false);
   const [amounts, setAmounts] = useState<string[]>(
     (line?.amounts ?? Array(12).fill(0)).map(formatAmountInput),
   );
@@ -102,6 +122,8 @@ export function BudgetLinePanel({
       label: label.trim(),
       categoryId: categoryId || null,
       amounts: parsedAmounts as number[],
+      mappingIds,
+      includeCategory: includeCategory && categoryId !== "",
     };
     const result = await saveBudgetLine(
       line
@@ -268,6 +290,17 @@ export function BudgetLinePanel({
         <p className="mt-2 text-right text-sm text-stone-600">
           I alt for året: <span className="font-semibold">{formatCurrency(yearTotal)}</span>
         </p>
+
+        <ActualLinkSection
+          lineId={line?.id ?? null}
+          mappings={mappings}
+          mappingUsage={mappingUsage}
+          selectedIds={mappingIds}
+          onChangeSelected={setMappingIds}
+          categoryName={categories.find((c) => c.id === categoryId)?.name ?? null}
+          includeCategory={includeCategory}
+          onChangeIncludeCategory={setIncludeCategory}
+        />
 
         {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
 

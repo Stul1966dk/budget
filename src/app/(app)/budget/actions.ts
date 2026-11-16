@@ -93,14 +93,15 @@ export async function createBudget(input: CreateBudgetInput): Promise<ActionResu
     }
     const { data: sourceLines } = await supabase
       .from("budget_lines")
-      .select("kind, label, category_id, mapping_id, amounts, sort_order")
+      .select("kind, label, category_id, mapping_ids, include_category, amounts, sort_order")
       .eq("budget_id", source.id)
       .order("sort_order");
     lines = ((sourceLines ?? []) as BudgetLineRow[]).map((l) => ({
       kind: l.kind,
       label: l.label,
       categoryId: l.category_id,
-      mappingId: l.mapping_id,
+      mappingIds: l.mapping_ids ?? [],
+      includeCategory: l.include_category ?? false,
       amounts: l.amounts.map(Number),
     }));
     // Næste års startsaldo = kildebudgettets forventede slutsaldo, men kun
@@ -127,7 +128,8 @@ export async function createBudget(input: CreateBudgetInput): Promise<ActionResu
         kind: l.kind,
         label: l.label,
         category_id: l.categoryId,
-        mapping_id: l.mappingId,
+        mapping_ids: l.mappingIds,
+        include_category: l.includeCategory,
         amounts: roundAmounts(l.amounts),
         sort_order: i,
       })),
@@ -206,6 +208,8 @@ const lineFieldsSchema = z.object({
   label: z.string().trim().min(1).max(200),
   categoryId: z.uuid().nullable(),
   amounts: amountsSchema,
+  mappingIds: z.array(z.uuid()).max(500),
+  includeCategory: z.boolean(),
 });
 
 const saveLineSchema = z.discriminatedUnion("mode", [
@@ -228,6 +232,9 @@ export async function saveBudgetLine(
     label: data.label,
     category_id: data.categoryId,
     amounts: roundAmounts(data.amounts),
+    mapping_ids: Array.from(new Set(data.mappingIds)),
+    // Uden kategori er der ikke noget at koble på.
+    include_category: data.includeCategory && data.categoryId !== null,
     updated_at: new Date().toISOString(),
   };
 

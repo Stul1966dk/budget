@@ -56,7 +56,7 @@ describe("buildBudgetFromForecast", () => {
 
     const rent = draft.lines.find((l) => l.label === "Husleje")!;
     expect(rent.kind).toBe("expense");
-    expect(rent.mappingId).toBe("rent");
+    expect(rent.mappingIds).toEqual(["rent"]);
     expect(rent.categoryId).toBe("bolig");
     expect(rent.amounts).toEqual(Array(12).fill(8000));
 

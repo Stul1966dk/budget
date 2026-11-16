@@ -1,8 +1,41 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import type { BudgetLineRow, BudgetRow, Category } from "@/lib/types/db";
+import type { BudgetLineRow, BudgetRow, Category, TextMappingRow, TransactionRow } from "@/lib/types/db";
+import { computeMonthlyBalances } from "@/lib/forecast/computeMonthlyBalances";
+import { monthKeyToDateRange } from "@/lib/month";
+import type { ActualTransaction } from "@/lib/budget/computeBudgetActuals";
+import type { MappingOption } from "./ActualLinkSection";
 import { BudgetEditor } from "./BudgetEditor";
 import { CreateBudgetPanel } from "./CreateBudgetPanel";
+
+const PAGE_SIZE = 1000;
+
+/** Henter alle årets posteringer - i bidder, da Supabase højst giver 1000 rækker ad gangen. */
+async function fetchYearTransactions(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  year: number,
+): Promise<{ data: TransactionRow[] }> {
+  const rows: TransactionRow[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select(
+        "id, date, amount, balance, import_seq, mapping_id, category_id, is_extraordinary, comment, raw_text",
+      )
+      .gte("date", `${year}-01-01`)
+      .lte("date", `${year}-12-31`)
+      .order("date")
+      .order("import_seq")
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) {
+      console.error("BudgetPage: kunne ikke hente posteringer:", error.code, error.message);
+      break;
+    }
+    rows.push(...((data ?? []) as TransactionRow[]));
+    if (!data || data.length < PAGE_SIZE) break;
+  }
+  return { data: rows };
+}
 
 export default async function BudgetPage({
   searchParams,
@@ -34,17 +67,70 @@ export default async function BudgetPage({
   const budget = budgets.find((b) => b.year === selectedYear) ?? null;
 
   let lines: BudgetLineRow[] = [];
+  let mappings: MappingOption[] = [];
+  let transactions: ActualTransaction[] = [];
+  let actualBalances: (number | null)[] = [];
+  let partialMonthIndex: number | null = null;
   if (budget) {
-    const { data: linesData } = await supabase
-      .from("budget_lines")
-      .select("*")
-      .eq("budget_id", budget.id)
-      .order("sort_order")
-      .order("created_at");
+    const [{ data: linesData }, { data: mappingsData }, { data: txData }, { data: latestTx }] =
+      await Promise.all([
+        supabase
+          .from("budget_lines")
+          .select("*")
+          .eq("budget_id", budget.id)
+          .order("sort_order")
+          .order("created_at"),
+        supabase.from("text_mappings").select("id, comment, match_pattern, active"),
+        fetchYearTransactions(supabase, budget.year),
+        supabase
+          .from("transactions")
+          .select("date")
+          .order("date", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+
     lines = ((linesData ?? []) as BudgetLineRow[]).map((l) => ({
       ...l,
       amounts: l.amounts.map(Number),
+      mapping_ids: l.mapping_ids ?? [],
     }));
+    mappings = (
+      (mappingsData ?? []) as Pick<TextMappingRow, "id" | "comment" | "match_pattern" | "active">[]
+    )
+      .map((m) => ({
+        id: m.id,
+        label: m.comment?.trim() || m.match_pattern,
+        pattern: m.match_pattern,
+        active: m.active,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label, "da"));
+
+    const yearTransactions = ((txData ?? []) as TransactionRow[]).map((t) => ({
+      ...t,
+      amount: Number(t.amount),
+      balance: t.balance === null ? null : Number(t.balance),
+    }));
+    actualBalances = computeMonthlyBalances(yearTransactions, budget.year);
+    transactions = yearTransactions.map((t) => ({
+      id: t.id,
+      date: t.date,
+      amount: t.amount,
+      mapping_id: t.mapping_id,
+      category_id: t.category_id,
+      is_extraordinary: t.is_extraordinary,
+      comment: t.comment,
+      raw_text: t.raw_text,
+    }));
+
+    // Den seneste uploadede måned er typisk kun delvist med.
+    const latestDate = (latestTx?.date as string | undefined) ?? null;
+    if (latestDate?.startsWith(`${budget.year}-`)) {
+      const monthKey = latestDate.slice(0, 7);
+      if (latestDate !== monthKeyToDateRange(monthKey).end) {
+        partialMonthIndex = Number(latestDate.slice(5, 7)) - 1;
+      }
+    }
   }
 
   const chipYears = budget || years.includes(selectedYear)
@@ -95,6 +181,10 @@ export default async function BudgetPage({
           budget={budget}
           initialLines={lines}
           categories={categories}
+          mappings={mappings}
+          transactions={transactions}
+          actualBalances={actualBalances}
+          partialMonthIndex={partialMonthIndex}
         />
       ) : (
         <CreateBudgetPanel
