@@ -2,6 +2,7 @@ import { formatMonthDa } from "@/lib/format";
 import type { MonthlySavings } from "@/lib/forecast/computeSavingsRate";
 import type { ForecastMonth } from "@/lib/forecast/computeExpenseForecast";
 import type { CategoryTrend } from "@/lib/forecast/computeCategoryTrends";
+import type { AdvisorBudgetSummary } from "@/lib/budget/summarizeBudgetForAdvisor";
 import {
   ADVISOR_MAX_TOKENS,
   createAdvisorClient,
@@ -17,6 +18,7 @@ export async function generateAdvice(input: {
   trends: CategoryTrend[];
   advisorNotes: string | null;
   advisorModel: string;
+  budgets?: AdvisorBudgetSummary[];
 }): Promise<string> {
   const client = createAdvisorClient();
 
@@ -47,6 +49,7 @@ export async function generateAdvice(input: {
         aendring_procent: t.percentChange,
         retning: t.direction === "increasing" ? "stigende" : "faldende",
       })),
+    ...(input.budgets?.length ? { husstandens_budgetter: input.budgets } : {}),
   };
 
   const supportsEffort = await modelSupportsMediumEffort(client, input.advisorModel);
@@ -59,6 +62,12 @@ export async function generateAdvice(input: {
     "Bemærk at 'forventede_faste_udgifter' KAN variere fra måned til måned, fordi nogle poster kun forfalder kvartalsvist eller halvårligt (fx bilafgift) - det er ikke en fejl, en enkelt måned kan derfor ramme markant hårdere end de andre. " +
     "Ekstraordinære engangsposter (fx hussalg, store udlæg, éngangsoverførsler) er allerede fjernet fra alle tallene du får, fordi de ikke er en del af husstandens normale budget. Et negativt resultat i tallene er derfor det reelle billede EKSKLUSIVE sådanne engangsposter - undlad at antage det er udlignet af noget udenfor dataen. " +
     "'forventet_saldo_ved_maanedens_slutning' er allerede beregnet som nuværende saldo plus det akkumulerede forventede nettoresultat måned for måned - brug DEN direkte til at vurdere om og hvornår saldoen risikerer at blive negativ, fremfor selv at lægge tal sammen på tværs af måneder. " +
+"'husstandens_budgetter' er det budget husstanden selv har lagt for indeværende år (og evt. næste år) på Budget siden i appen - poster grupperet efter kategori med beløb pr. måned. " +
+    "'budget_mod_faktisk' sammenligner budgettet med de faktiske posteringer for de måneder der er uploadet: 'forskel' er faktisk minus budget, og 'vurdering' siger om afvigelsen er god eller dårlig for husstanden - brug de tal direkte i stedet for at regne selv. " +
+    "'ikke_budgetteret' er faktiske posteringer som ikke hører under nogen budgetpost; store eller tilbagevendende beløb dér er tegn på at budgettet mangler en post. Ekstraordinære poster står for sig under 'ekstraordinaere' og indgår ikke i 'nettoresultat_uden_ekstraordinaere'. " +
+    "Er 'seneste_maaned_er_muligvis_ufuldstaendig' true, er den seneste måned kun delvist uploadet og ser derfor billigere ud end den ender med at blive - tag forbehold for det. " +
+    "Poster med 'koblet_til_posteringer': false har intet faktisk forbrug tilknyttet, så deres 'faktisk' er 0 uanset hvad der er brugt - påpeg det i stedet for at kalde dem billigere end budgetteret. " +
+    "Når der er et budget med faktiske tal, så lad mindst én anbefaling handle om hvor budgettet holder eller skrider, og hvilke poster der evt. bør justeres. " +
     "Dette er budgetrådgivning baseret på husstandens egne tal - ikke investeringsrådgivning. " +
     "Skriv som en kort punktliste, konkret og uden fyld. Ingen indledning, ingen afslutning, ingen overskrifter. " +
     "Ren tekst uden markdown-formatering - ingen ** for fed skrift eller andre markdown-tegn.";

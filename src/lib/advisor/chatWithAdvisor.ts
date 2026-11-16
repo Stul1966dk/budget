@@ -51,6 +51,7 @@ export async function chatWithAdvisor(
       retning: t.direction === "increasing" ? "stigende" : t.direction === "decreasing" ? "faldende" : "stabil",
     })),
     seneste_bemaerkninger: snapshot.recentAlertMessages,
+    ...(snapshot.budgets.length ? { husstandens_budgetter: snapshot.budgets } : {}),
   };
 
   const supportsEffort = await modelSupportsMediumEffort(client, snapshot.advisorModel);
@@ -63,6 +64,13 @@ export async function chatWithAdvisor(
     "'seneste_bemaerkninger' er konkrete observationer appen allerede har fundet (prisstigninger, usædvanlige beløb, manglende poster) - brug dem som grundlag når de er relevante for spørgsmålet. " +
     "Ekstraordinære engangsposter (fx hussalg, store udlæg, éngangsoverførsler) er allerede fjernet fra alle tallene - et negativt resultat er derfor det reelle billede EKSKLUSIVE den slags, ikke udlignet af noget udenfor dataen. " +
     "Hvis et spørgsmål kræver data du ikke har fået (fx en bestemt enkelt-postering, eller perioder udenfor tallene ovenfor), så sig det tydeligt i stedet for at gætte eller opfinde et svar. " +
+"'husstandens_budgetter' er det budget husstanden selv har lagt for indeværende år (og evt. næste år) på Budget siden i appen - poster grupperet efter kategori med beløb pr. måned. " +
+    "'budget_mod_faktisk' sammenligner budgettet med de faktiske posteringer for de måneder der er uploadet: 'forskel' er faktisk minus budget, og 'vurdering' siger om afvigelsen er god eller dårlig for husstanden - brug de tal direkte i stedet for at regne selv. " +
+    "'ikke_budgetteret' er faktiske posteringer som ikke hører under nogen budgetpost; store eller tilbagevendende beløb dér er tegn på at budgettet mangler en post. Ekstraordinære poster står for sig under 'ekstraordinaere' og indgår ikke i 'nettoresultat_uden_ekstraordinaere'. " +
+    "Er 'seneste_maaned_er_muligvis_ufuldstaendig' true, er den seneste måned kun delvist uploadet og ser derfor billigere ud end den ender med at blive - tag forbehold for det. " +
+    "Poster med 'koblet_til_posteringer': false har intet faktisk forbrug tilknyttet, så deres 'faktisk' er 0 uanset hvad der er brugt - påpeg det i stedet for at kalde dem billigere end budgetteret. " +
+    "Hvis husstanden ikke har lagt et budget for året (ingen 'husstandens_budgetter'), og spørgsmålet handler om budgettet, så sig det og nævn at det kan lægges på Budget siden. " +
+    "Du kan kun læse budgettet, ikke ændre det - foreslå konkrete ændringer, som husstanden selv kan lave på Budget siden (rette beløb, tilføje en post, eller koble en post til flere regler). " +
     "Når det er relevant, kan du pege på konkrete steder i appen - fx at 'Forventet månedlig indbetaling' kan justeres manuelt under Rådgiver-siden, hvis I overvejer at ændre det budgetterede beløb. " +
     "Dette er budgetrådgivning ud fra husstandens egne tal - ikke investeringsrådgivning. " +
     "Svar kort og konkret som i en samtale, ikke som en rapport - typisk et par sætninger, medmindre spørgsmålet kræver en punktliste. " +
