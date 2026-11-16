@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
 import { computeSavingsRate } from "@/lib/forecast/computeSavingsRate";
 import { computeForecastLineItems } from "@/lib/forecast/computeForecastLineItems";
 import { computeCategoryTrends } from "@/lib/forecast/computeCategoryTrends";
@@ -52,7 +53,9 @@ export default async function PrognosePage({
     { data: mappingsData },
     { data: chatMessagesData },
   ] = await Promise.all([
-    supabase.from("transactions").select("*").order("date"),
+    fetchAllRows((from, to) =>
+      supabase.from("transactions").select("*").order("date").order("id").range(from, to),
+    ),
     supabase.from("categories").select("*").order("sort_order"),
     supabase
       .from("advisor_insights")

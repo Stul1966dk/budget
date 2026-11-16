@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
 import type { Category, TextMappingRow } from "@/lib/types/db";
 import { RuleList } from "./RuleList";
 import { CategoryFilter } from "./CategoryFilter";
@@ -25,10 +26,14 @@ export default async function ReglerPage({
         .select("*")
         .order("created_at", { ascending: false }),
       supabase.from("categories").select("*").order("sort_order"),
-      supabase
-        .from("transactions")
-        .select("mapping_id, amount")
-        .not("mapping_id", "is", null),
+      fetchAllRows((from, to) =>
+        supabase
+          .from("transactions")
+          .select("mapping_id, amount")
+          .not("mapping_id", "is", null)
+          .order("id")
+          .range(from, to),
+      ),
     ]);
 
   const allRules = (rulesData ?? []) as TextMappingRow[];

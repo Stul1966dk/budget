@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
 import type { Category, TextMappingRow, TransactionRow } from "@/lib/types/db";
 import { computeCurrentBalance } from "@/lib/forecast/computeCurrentBalance";
 import { computeMonthlyBalances } from "@/lib/forecast/computeMonthlyBalances";
@@ -51,16 +52,28 @@ export default async function AarPage({
     { data: balanceData },
   ] = await Promise.all([
     supabase.from("categories").select("*").order("sort_order"),
-    supabase
-      .from("transactions")
-      .select(
-        "id, date, amount, category_id, is_extraordinary, raw_text, comment, mapping_id",
-      )
-      .gte("date", start)
-      .lte("date", end)
-      .eq("is_extraordinary", false),
+    fetchAllRows((from, to) =>
+      supabase
+        .from("transactions")
+        .select(
+          "id, date, amount, category_id, is_extraordinary, raw_text, comment, mapping_id",
+        )
+        .gte("date", start)
+        .lte("date", end)
+        .eq("is_extraordinary", false)
+        .order("date")
+        .order("id")
+        .range(from, to),
+    ),
     supabase.from("text_mappings").select("id, comment, match_pattern, display_mode"),
-    supabase.from("transactions").select("date, balance, import_seq"),
+    fetchAllRows((from, to) =>
+      supabase
+        .from("transactions")
+        .select("date, balance, import_seq")
+        .order("date")
+        .order("id")
+        .range(from, to),
+    ),
   ]);
 
   const categories = (categoriesData ?? []) as Category[];

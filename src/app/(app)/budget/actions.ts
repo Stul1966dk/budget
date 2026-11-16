@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
 import { buildBudgetFromForecast, type DraftBudgetLine } from "@/lib/budget/buildBudgetFromForecast";
 import { computeBudgetTotals } from "@/lib/budget/computeBudgetTotals";
 import type {
@@ -57,7 +58,9 @@ export async function createBudget(input: CreateBudgetInput): Promise<ActionResu
   if (parsed.data.source === "forecast") {
     const [{ data: txData, error: txError }, { data: mapData }, { data: settings }] =
       await Promise.all([
-        supabase.from("transactions").select("*").order("date"),
+        fetchAllRows((from, to) =>
+          supabase.from("transactions").select("*").order("date").order("id").range(from, to),
+        ),
         supabase
           .from("text_mappings")
           .select("id, comment, match_pattern, category_id, active"),

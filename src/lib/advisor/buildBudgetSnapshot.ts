@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
 import type {
   AlertRow,
   BudgetLineRow,
@@ -57,7 +58,9 @@ export async function buildBudgetSnapshot(
     { data: mappingsData },
     { data: alertsData },
   ] = await Promise.all([
-    supabase.from("transactions").select("*").order("date"),
+    fetchAllRows((from, to) =>
+      supabase.from("transactions").select("*").order("date").order("id").range(from, to),
+    ),
     supabase.from("categories").select("*").order("sort_order"),
     supabase.from("forecast_settings").select("*").limit(1).maybeSingle(),
     supabase.from("text_mappings").select("id, comment, match_pattern, active"),

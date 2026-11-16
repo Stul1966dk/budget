@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
 import {
   extractMonthKey,
   getCurrentMonthKey,
@@ -46,7 +47,14 @@ export default async function DashboardPage({
       .lte("date", end)
       .order("date", { ascending: true })
       .order("import_seq", { ascending: true }),
-    supabase.from("transactions").select("date").order("date", { ascending: false }),
+    fetchAllRows((from, to) =>
+      supabase
+        .from("transactions")
+        .select("date")
+        .order("date", { ascending: false })
+        .order("id")
+        .range(from, to),
+    ),
     supabase
       .from("alerts")
       .select("*")

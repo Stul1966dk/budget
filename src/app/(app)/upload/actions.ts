@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
 import { parseDanskeBankFile } from "@/lib/csv/parseDanskeBank";
 import { findBestMatchingRule } from "@/lib/mapping/findBestMatch";
 import {
@@ -186,10 +187,10 @@ async function detectAndSaveAlerts(
 ): Promise<string[]> {
   if (insertedRows.length === 0) return [];
 
-  const { data: allTransactionsData, error: allTransactionsError } = await supabase
-    .from("transactions")
-    .select("*")
-    .order("date");
+  const { data: allTransactionsData, error: allTransactionsError } = await fetchAllRows(
+    (from, to) =>
+      supabase.from("transactions").select("*").order("date").order("id").range(from, to),
+  );
 
   if (allTransactionsError) {
     console.error(
