@@ -81,3 +81,27 @@ export type ForecastSettingsRow = {
   advisor_model: string | null;
   updated_at: string;
 };
+
+export type BudgetRow = {
+  id: string;
+  year: number;
+  start_balance: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type BudgetLineKind = "income" | "expense";
+
+export type BudgetLineRow = {
+  id: string;
+  budget_id: string;
+  kind: BudgetLineKind;
+  label: string;
+  category_id: string | null;
+  mapping_id: string | null;
+  /** 12 beløb uden fortegn, januar til december. */
+  amounts: number[];
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
