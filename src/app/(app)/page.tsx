@@ -157,7 +157,7 @@ export default async function AarPage({
   const grandTotal = monthTotals.reduce((sum, v) => sum + v, 0);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6">
+    <div className="w-full px-4 py-6 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-stone-900">Årsoversigt</h1>
         <YearSelector year={year} />

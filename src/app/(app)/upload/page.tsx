@@ -25,7 +25,7 @@ export default async function UploadPage() {
   const latestUpload = (latestUploadData ?? null) as UploadRow | null;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6">
+    <div className="w-full px-4 py-6 sm:px-6 lg:px-8">
       <h1 className="text-xl font-semibold text-stone-900">
         Upload posteringer
       </h1>

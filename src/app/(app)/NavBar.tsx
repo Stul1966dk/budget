@@ -17,7 +17,7 @@ export function NavBar() {
 
   return (
     <>
-      <header className="flex items-center justify-between border-b border-stone-200 bg-white px-4 py-3 sm:px-6">
+      <header className="flex items-center justify-between border-b border-stone-200 bg-white px-4 py-3 sm:px-6 lg:px-8">
         <span className="text-lg font-semibold text-forest-900">Budget</span>
         <form action={signOut}>
           <button
@@ -30,7 +30,7 @@ export function NavBar() {
       </header>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-10 flex justify-around border-t border-stone-200 bg-white pb-[env(safe-area-inset-bottom)] sm:static sm:justify-start sm:gap-1 sm:border-b sm:border-t-0 sm:px-6 sm:pb-0"
+        className="fixed inset-x-0 bottom-0 z-10 flex justify-around border-t border-stone-200 bg-white pb-[env(safe-area-inset-bottom)] sm:static sm:justify-start sm:gap-1 sm:border-b sm:border-t-0 sm:px-6 sm:pb-0 lg:px-8"
         aria-label="Hovednavigation"
       >
         {LINKS.map((link) => {
