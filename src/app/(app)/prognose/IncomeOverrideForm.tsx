@@ -50,7 +50,7 @@ export function IncomeOverrideForm({
   return (
     <form onSubmit={handleSubmit} className="mt-3 flex flex-wrap items-end gap-2">
       <div>
-        <label htmlFor="income-override" className="block text-xs text-stone-500">
+        <label htmlFor="income-override" className="block text-xs text-white/80">
           Forventet månedlig indbetaling (kr.)
         </label>
         <input
@@ -60,7 +60,7 @@ export function IncomeOverrideForm({
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={`Auto: ${formatCurrency(autoDetectedValue)}`}
-          className="mt-1 w-44 rounded-lg border border-stone-300 px-3 py-1.5 text-sm focus:border-stone-500 focus:outline-none"
+          className="mt-1 w-44 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm focus:border-stone-500 focus:outline-none"
         />
       </div>
       <button
@@ -75,12 +75,12 @@ export function IncomeOverrideForm({
           type="button"
           onClick={handleReset}
           disabled={isSaving}
-          className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:bg-stone-100 disabled:opacity-50"
+          className="rounded-lg border border-white/40 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10 disabled:opacity-50"
         >
           Nulstil til automatisk
         </button>
       )}
-      {error && <p className="w-full text-xs text-red-600">{error}</p>}
+      {error && <p className="w-full text-xs text-red-200">{error}</p>}
     </form>
   );
 }

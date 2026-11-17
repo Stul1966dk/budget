@@ -26,10 +26,10 @@ export default async function UploadPage() {
 
   return (
     <div className="w-full px-4 py-6 sm:px-6 lg:px-8">
-      <h1 className="text-xl font-semibold text-stone-900">
+      <h1 className="text-xl font-semibold text-white">
         Upload posteringer
       </h1>
-      <p className="mt-1 text-sm text-stone-500">
+      <p className="mt-1 text-sm text-white/80">
         Vælg en CSV-eksport fra Danske Bank. Du ser en forhåndsvisning af de
         parsede værdier, før noget importeres.
       </p>

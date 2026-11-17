@@ -71,8 +71,8 @@ export default async function ReglerPage({
 
   return (
     <div className="w-full px-4 py-6 sm:px-6 lg:px-8">
-      <h1 className="text-xl font-semibold text-stone-900">Regler</h1>
-      <p className="mt-1 text-sm text-stone-500">
+      <h1 className="text-xl font-semibold text-white">Regler</h1>
+      <p className="mt-1 text-sm text-white/80">
         Mapping-regler udfylder automatisk kommentar og kategori på nye
         posteringer ved import, ud fra deres rå tekst fra banken.
       </p>

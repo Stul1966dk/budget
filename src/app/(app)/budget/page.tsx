@@ -111,8 +111,8 @@ export default async function BudgetPage({
 
   return (
     <div className="w-full px-4 py-6 sm:px-6 lg:px-8">
-      <h1 className="text-xl font-semibold text-stone-900">Budget</h1>
-      <p className="mt-1 text-sm text-stone-500">
+      <h1 className="text-xl font-semibold text-white">Budget</h1>
+      <p className="mt-1 text-sm text-white/80">
         Læg budget for et år med jeres egne tal. Start ud fra prognosen eller
         sidste års budget, og ret, tilføj og slet poster. Tidligere års
         budgetter bliver gemt.
@@ -140,7 +140,7 @@ export default async function BudgetPage({
         {!chipYears.includes(nextNewYear) && (
           <Link
             href={`/budget?year=${nextNewYear}`}
-            className="rounded-full border border-dashed border-stone-300 px-3 py-1 text-sm text-stone-500 hover:bg-stone-100 hover:text-stone-900"
+            className="rounded-full border border-dashed border-white/50 px-3 py-1 text-sm text-white/80 hover:bg-white/10 hover:text-white"
           >
             + Nyt budget
           </Link>

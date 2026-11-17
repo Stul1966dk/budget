@@ -130,8 +130,8 @@ export default async function PrognosePage({
 
   return (
     <div className="w-full px-4 py-6 sm:px-6 lg:px-8">
-      <h1 className="text-xl font-semibold text-stone-900">Rådgiver</h1>
-      <p className="mt-1 text-sm text-stone-500">
+      <h1 className="text-xl font-semibold text-white">Rådgiver</h1>
+      <p className="mt-1 text-sm text-white/80">
         Opsparingsrate, udgiftsprognose og kategori-trends baseret på jeres
         egne posteringer, med en kort AI-genereret anbefaling der opdateres
         ved hver ny upload - og en chat hvor I kan spørge ind til tallene.
@@ -207,9 +207,9 @@ export default async function PrognosePage({
       <AdvisorChat messages={chatMessages} />
 
       <section className="mt-6">
-        <h2 className="text-sm font-semibold text-stone-900">Opsparingsrate</h2>
+        <h2 className="text-sm font-semibold text-white">Opsparingsrate</h2>
         {savings.length === 0 ? (
-          <p className="mt-2 text-sm text-stone-400">Ingen data endnu.</p>
+          <p className="mt-2 text-sm text-white/70">Ingen data endnu.</p>
         ) : (
           <div className="mt-2 overflow-x-auto rounded-xl border border-stone-200 bg-white">
             <table className="w-full text-left text-sm">
@@ -253,7 +253,7 @@ export default async function PrognosePage({
       </section>
 
       <section className="mt-6">
-        <h2 className="text-sm font-semibold text-stone-900">
+        <h2 className="text-sm font-semibold text-white">
           Prognose - næste {sheet.monthKeys.length} måneder
         </h2>
         <ForecastRangeSelector months={monthsAhead} />
@@ -262,7 +262,7 @@ export default async function PrognosePage({
           autoDetectedValue={autoDetectedIncome}
         />
         {sheet.monthKeys.length === 0 ? (
-          <p className="mt-2 text-sm text-stone-400">Ingen data endnu.</p>
+          <p className="mt-2 text-sm text-white/70">Ingen data endnu.</p>
         ) : (
           <ForecastSheet
             monthKeys={sheet.monthKeys}
@@ -276,7 +276,7 @@ export default async function PrognosePage({
             incomeIsOverridden={incomeOverride !== null}
           />
         )}
-        <p className="mt-2 text-xs text-stone-400">
+        <p className="mt-2 text-xs text-white/70">
           Hver linje er en mapping-regel, projiceret på det interval den
           faktisk plejer at optræde med - månedligt, kvartalsvist,
           halvårligt osv. En post der kun er set én gang (fx en halvårlig
@@ -289,9 +289,9 @@ export default async function PrognosePage({
       </section>
 
       <section className="mt-6">
-        <h2 className="text-sm font-semibold text-stone-900">Kategori-trends</h2>
+        <h2 className="text-sm font-semibold text-white">Kategori-trends</h2>
         {trends.length === 0 ? (
-          <p className="mt-2 text-sm text-stone-400">
+          <p className="mt-2 text-sm text-white/70">
             Ingen kategorier viser en tydelig stigende eller faldende trend
             endnu.
           </p>
@@ -315,7 +315,7 @@ export default async function PrognosePage({
             ))}
           </ul>
         )}
-        <p className="mt-2 text-xs text-stone-400">
+        <p className="mt-2 text-xs text-white/70">
           Sammenligner gennemsnitsforbruget pr. kategori i første og anden
           halvdel af de seneste 6 måneder. En kategori vises kun her hvis
           forskellen er over 10% i enten retning - mindre udsving regnes som

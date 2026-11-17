@@ -45,14 +45,14 @@ export function TransactionList({
   return (
     <div className="mt-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-stone-900">Posteringer</h2>
+        <h2 className="text-sm font-semibold text-white">Posteringer</h2>
         <div className="flex flex-wrap gap-3">
           <a
             href="?"
             className={`text-xs font-medium underline ${
               filterMode === "alle"
-                ? "text-stone-900"
-                : "text-stone-500 hover:text-stone-900"
+                ? "text-white"
+                : "text-white/70 hover:text-white"
             }`}
           >
             Alle
@@ -61,8 +61,8 @@ export function TransactionList({
             href="?filter=umatchede"
             className={`text-xs font-medium underline ${
               filterMode === "umatchede"
-                ? "text-stone-900"
-                : "text-stone-500 hover:text-stone-900"
+                ? "text-white"
+                : "text-white/70 hover:text-white"
             }`}
           >
             Ukategoriserede
@@ -71,8 +71,8 @@ export function TransactionList({
             href="?filter=ekstraordinaere"
             className={`text-xs font-medium underline ${
               filterMode === "ekstraordinaere"
-                ? "text-stone-900"
-                : "text-stone-500 hover:text-stone-900"
+                ? "text-white"
+                : "text-white/70 hover:text-white"
             }`}
           >
             Ekstraordinære (alle måneder)
@@ -81,14 +81,14 @@ export function TransactionList({
       </div>
 
       {filterMode === "ekstraordinaere" && (
-        <p className="mt-2 text-xs text-stone-400">
+        <p className="mt-2 text-xs text-white/70">
           Viser ekstraordinære posteringer på tværs af alle måneder, uanset
           hvilken måned der er valgt ovenfor.
         </p>
       )}
 
       {transactions.length === 0 ? (
-        <p className="mt-3 text-sm text-stone-400">Ingen posteringer at vise.</p>
+        <p className="mt-3 text-sm text-white/70">Ingen posteringer at vise.</p>
       ) : (
         <ul className="mt-2 divide-y divide-stone-100 overflow-hidden rounded-xl border border-stone-200 bg-white">
           {transactions.map((t) => {

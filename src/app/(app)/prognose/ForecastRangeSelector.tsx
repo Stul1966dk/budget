@@ -37,7 +37,7 @@ export function ForecastRangeSelector({ months }: { months: number }) {
             className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
               months === p
                 ? "bg-forest-900 text-white"
-                : "border border-stone-300 text-stone-700 hover:bg-stone-100"
+                : "border border-white/40 text-white hover:bg-white/10"
             }`}
           >
             {p} mdr.
@@ -56,11 +56,11 @@ export function ForecastRangeSelector({ months }: { months: number }) {
           max={MAX_MONTHS}
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          className="w-16 rounded-lg border border-stone-300 px-2 py-1 text-sm focus:border-stone-500 focus:outline-none"
+          className="w-16 rounded-lg border border-stone-300 bg-white px-2 py-1 text-sm focus:border-stone-500 focus:outline-none"
         />
         <button
           type="submit"
-          className="rounded-lg border border-stone-300 px-2.5 py-1 text-xs font-medium text-stone-700 hover:bg-stone-100"
+          className="rounded-lg border border-white/40 px-2.5 py-1 text-xs font-medium text-white hover:bg-white/10"
         >
           Vis
         </button>

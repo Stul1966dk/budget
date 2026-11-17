@@ -25,7 +25,7 @@ export default function LoginPage() {
   }, [emailState]);
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-cream px-4">
+    <main className="flex min-h-dvh items-center justify-center bg-page px-4">
       <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-sm">
         <h1 className="text-xl font-semibold text-forest-900">Budget</h1>
         <p className="mt-1 text-sm text-stone-500">

@@ -172,10 +172,10 @@ export default async function AarPage({
   return (
     <div className="w-full px-4 py-6 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-stone-900">Årsoversigt</h1>
+        <h1 className="text-xl font-semibold text-white">Årsoversigt</h1>
         <YearSelector year={year} />
       </div>
-      <p className="mt-1 text-sm text-stone-500">
+      <p className="mt-1 text-sm text-white/80">
         Udgifter pr. kategori og måned for {year} (ekskl. ekstraordinære
         poster). Klik på en kategori for at se de enkelte poster.
       </p>
@@ -194,7 +194,7 @@ export default async function AarPage({
       </div>
 
       {rows.length === 0 ? (
-        <p className="mt-6 text-sm text-stone-400">
+        <p className="mt-6 text-sm text-white/70">
           Ingen posteringer for {year}.
         </p>
       ) : (

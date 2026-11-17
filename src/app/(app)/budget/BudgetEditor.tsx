@@ -287,7 +287,7 @@ export function BudgetEditor({
             </table>
           </div>
 
-          <p className="mt-2 text-xs text-stone-400">
+          <p className="mt-2 text-xs text-white/70">
             Posterne er grupperet efter deres kategori. Klik på et beløb for at
             rette det - det gemmes, når du forlader feltet. Klik på en posts
             navn for at omdøbe den, skifte kategori, fordele et beløb over året,
@@ -298,7 +298,7 @@ export function BudgetEditor({
           <button
             type="button"
             onClick={() => setConfirmDelete(true)}
-            className="mt-6 text-xs text-stone-400 underline hover:text-red-600"
+            className="mt-6 text-xs text-white/70 underline hover:text-red-200"
           >
             Slet budgettet for {budget.year}
           </button>
@@ -577,7 +577,7 @@ function StartBalanceInput({
 
   return (
     <div>
-      <label htmlFor="start-balance" className="block text-xs text-stone-500">
+      <label htmlFor="start-balance" className="block text-xs text-white/80">
         Saldo ved årets start (kr.)
       </label>
       <input
@@ -592,7 +592,7 @@ function StartBalanceInput({
         onKeyDown={(e) => {
           if (e.key === "Enter") e.currentTarget.blur();
         }}
-        className={`mt-1 w-40 rounded-lg border px-3 py-1.5 text-sm focus:border-stone-500 focus:outline-none ${
+        className={`mt-1 w-40 rounded-lg border bg-white px-3 py-1.5 text-sm focus:border-stone-500 focus:outline-none ${
           invalid ? "border-red-400 bg-red-50" : "border-stone-300"
         }`}
       />
