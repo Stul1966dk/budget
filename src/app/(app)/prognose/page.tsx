@@ -170,7 +170,7 @@ export default async function PrognosePage({
             href="/maaned?filter=ekstraordinaere"
             className="mt-2 inline-block text-xs font-medium underline"
           >
-            Se og redigér på Oversigt
+            Se og redigér på Posteringer
           </a>
         </details>
       )}

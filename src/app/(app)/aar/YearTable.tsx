@@ -37,13 +37,20 @@ export function YearTable({
   rows,
   monthTotals,
   grandTotal,
+  monthIncome,
   monthlyBalances,
+  monthlyLowestBalances,
 }: {
   rows: YearTableCategory[];
   monthTotals: number[];
   grandTotal: number;
+  monthIncome: number[];
   monthlyBalances: (number | null)[];
+  monthlyLowestBalances: (number | null)[];
 }) {
+  const incomeTotal = monthIncome.reduce((sum, v) => sum + v, 0);
+  const monthResults = monthIncome.map((income, i) => income - monthTotals[i]);
+  const resultTotal = incomeTotal - grandTotal;
   const latestKnownBalance = [...monthlyBalances].reverse().find((v) => v !== null) ?? null;
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const expandableKeys = rows.filter((r) => r.items.length > 0).map((r) => r.key);
@@ -152,13 +159,52 @@ export function YearTable({
           </tbody>
           <tfoot>
             <tr className="border-t border-stone-200 font-medium text-stone-900">
-              <td className="sticky left-0 bg-white px-3 py-2 text-left">Total</td>
+              <td className="sticky left-0 bg-white px-3 py-2 text-left">Udgifter i alt</td>
               {monthTotals.map((value, i) => (
                 <td key={i} className="px-2 py-2 text-right">
                   {value > 0 ? formatCurrency(value) : "–"}
                 </td>
               ))}
               <td className="px-3 py-2 text-right">{formatCurrency(grandTotal)}</td>
+            </tr>
+            <tr className="text-stone-700">
+              <td className="sticky left-0 bg-white px-3 py-2 text-left">Indtægter</td>
+              {monthIncome.map((value, i) => (
+                <td key={i} className="px-2 py-2 text-right text-green-700">
+                  {value > 0 ? formatCurrency(value) : "–"}
+                </td>
+              ))}
+              <td className="px-3 py-2 text-right text-green-700">
+                {formatCurrency(incomeTotal)}
+              </td>
+            </tr>
+            <tr className="border-t border-stone-100 font-medium">
+              <td className="sticky left-0 bg-white px-3 py-2 text-left text-stone-900">
+                Resultat
+              </td>
+              {monthResults.map((value, i) => (
+                <td
+                  key={i}
+                  className={`px-2 py-2 text-right ${
+                    monthIncome[i] === 0 && monthTotals[i] === 0
+                      ? "text-stone-400"
+                      : value >= 0
+                        ? "text-green-700"
+                        : "text-red-700"
+                  }`}
+                >
+                  {monthIncome[i] === 0 && monthTotals[i] === 0
+                    ? "–"
+                    : formatCurrency(value)}
+                </td>
+              ))}
+              <td
+                className={`px-3 py-2 text-right ${
+                  resultTotal >= 0 ? "text-green-700" : "text-red-700"
+                }`}
+              >
+                {formatCurrency(resultTotal)}
+              </td>
             </tr>
             <tr className="bg-stone-50 text-stone-600">
               <td className="sticky left-0 bg-stone-50 px-3 py-2 text-left">Saldo</td>
@@ -174,6 +220,16 @@ export function YearTable({
                   }`}
                 >
                   {value !== null ? formatCurrency(value) : "–"}
+                  {monthlyLowestBalances[i] !== null &&
+                    monthlyLowestBalances[i]! < 0 &&
+                    monthlyLowestBalances[i] !== value && (
+                      <span
+                        className="block text-[11px] text-red-600"
+                        title="Saldoen har været i minus i løbet af måneden"
+                      >
+                        laveste {formatCurrency(monthlyLowestBalances[i]!)}
+                      </span>
+                    )}
                 </td>
               ))}
               <td

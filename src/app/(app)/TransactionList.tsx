@@ -10,14 +10,24 @@ import { ConfirmDialog } from "./ConfirmDialog";
 
 type PendingRule = { id: string; matchCount: number; pattern: string };
 
+export type TransactionFilterCounts = {
+  alle: number;
+  umatchede: number;
+  ekstraordinaere: number;
+};
+
 export function TransactionList({
   transactions,
   categories,
   filterMode,
+  monthKey,
+  counts,
 }: {
   transactions: TransactionRow[];
   categories: Category[];
   filterMode: "alle" | "umatchede" | "ekstraordinaere";
+  monthKey: string;
+  counts: TransactionFilterCounts;
 }) {
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -44,41 +54,44 @@ export function TransactionList({
 
   return (
     <div className="mt-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-white">Posteringer</h2>
-        <div className="flex flex-wrap gap-3">
-          <a
-            href="?"
-            className={`text-xs font-medium underline ${
-              filterMode === "alle"
-                ? "text-white"
-                : "text-white/70 hover:text-white"
-            }`}
-          >
-            Alle
-          </a>
-          <a
-            href="?filter=umatchede"
-            className={`text-xs font-medium underline ${
-              filterMode === "umatchede"
-                ? "text-white"
-                : "text-white/70 hover:text-white"
-            }`}
-          >
-            Ukategoriserede
-          </a>
-          <a
-            href="?filter=ekstraordinaere"
-            className={`text-xs font-medium underline ${
-              filterMode === "ekstraordinaere"
-                ? "text-white"
-                : "text-white/70 hover:text-white"
-            }`}
-          >
-            Ekstraordinære (alle måneder)
-          </a>
-        </div>
-      </div>
+      <nav className="flex flex-wrap gap-2" aria-label="Filtrér posteringer">
+        {(
+          [
+            { mode: "alle", label: "Alle" },
+            { mode: "umatchede", label: "Ukategoriserede" },
+            { mode: "ekstraordinaere", label: "Ekstraordinære (alle måneder)" },
+          ] as const
+        ).map(({ mode, label }) => {
+          const isActive = filterMode === mode;
+          const params = new URLSearchParams({ month: monthKey });
+          if (mode !== "alle") params.set("filter", mode);
+          return (
+            <a
+              key={mode}
+              href={`?${params.toString()}`}
+              aria-current={isActive ? "page" : undefined}
+              className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+                isActive
+                  ? "border-white bg-white text-forest-900"
+                  : "border-white/40 text-white hover:bg-white/10"
+              }`}
+            >
+              {label}
+              <span
+                className={`ml-1.5 rounded-full px-1.5 text-xs ${
+                  isActive
+                    ? "bg-forest-100 text-forest-900"
+                    : mode === "umatchede" && counts.umatchede > 0
+                      ? "bg-amber-300 text-amber-950"
+                      : "bg-white/15 text-white"
+                }`}
+              >
+                {counts[mode]}
+              </span>
+            </a>
+          );
+        })}
+      </nav>
 
       {filterMode === "ekstraordinaere" && (
         <p className="mt-2 text-xs text-white/70">

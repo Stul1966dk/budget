@@ -1,9 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
-import type { Category, TextMappingRow, TransactionRow } from "@/lib/types/db";
+import type { AlertRow, Category, TextMappingRow, TransactionRow } from "@/lib/types/db";
 import { computeCurrentBalance } from "@/lib/forecast/computeCurrentBalance";
 import { computeMonthlyBalances } from "@/lib/forecast/computeMonthlyBalances";
+import { computeMonthlyLowestBalances } from "@/lib/forecast/computeMonthlyLowestBalances";
 import { formatCurrency } from "@/lib/format";
+import { AlertsPanel } from "./AlertsPanel";
 import { YearSelector } from "./aar/YearSelector";
 import { YearTable, type YearTableCategory } from "./aar/YearTable";
 
@@ -50,6 +52,7 @@ export default async function AarPage({
     { data: transactionsData },
     { data: mappingsData },
     { data: balanceData },
+    { data: alertsData },
   ] = await Promise.all([
     supabase.from("categories").select("*").order("sort_order"),
     fetchAllRows((from, to) =>
@@ -74,6 +77,11 @@ export default async function AarPage({
         .order("id")
         .range(from, to),
     ),
+    supabase
+      .from("alerts")
+      .select("*")
+      .eq("acknowledged", false)
+      .order("created_at", { ascending: false }),
   ]);
 
   const categories = (categoriesData ?? []) as Category[];
@@ -84,6 +92,13 @@ export default async function AarPage({
   );
   const currentBalance = computeCurrentBalance(balanceData ?? []);
   const monthlyBalances = computeMonthlyBalances(balanceData ?? [], year);
+  const monthlyLowestBalances = computeMonthlyLowestBalances(balanceData ?? [], year);
+  const alerts = (alertsData ?? []) as AlertRow[];
+
+  const monthIncome: number[] = new Array(12).fill(0);
+  for (const t of transactions) {
+    if (t.amount > 0) monthIncome[Number(t.date.slice(5, 7)) - 1] += t.amount;
+  }
 
   const categoryGrid = new Map<string, number[]>();
   const itemGrid = new Map<string, Map<string, { label: string; months: number[] }>>();
@@ -98,7 +113,7 @@ export default async function AarPage({
   }
 
   for (const t of transactions) {
-    if (t.amount >= 0) continue; // årsoversigten viser kun udgifter
+    if (t.amount >= 0) continue; // kategorirækkerne viser kun udgifter
     const monthIndex = Number(t.date.slice(5, 7)) - 1;
     const categoryKey = t.category_id ?? "none";
     const amount = Math.abs(t.amount);
@@ -171,13 +186,15 @@ export default async function AarPage({
 
   return (
     <div className="w-full px-4 py-6 sm:px-6 lg:px-8">
+      <AlertsPanel alerts={alerts} />
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-white">Årsoversigt</h1>
         <YearSelector year={year} />
       </div>
       <p className="mt-1 text-sm text-white/80">
-        Udgifter pr. kategori og måned for {year} (ekskl. ekstraordinære
-        poster). Klik på en kategori for at se de enkelte poster.
+        Udgifter pr. kategori og måned for {year}, med indtægter, resultat og
+        saldo nederst (ekskl. ekstraordinære poster). Klik på en kategori for
+        at se de enkelte poster.
       </p>
 
       <div className="mt-4 inline-flex items-baseline gap-2 rounded-xl border border-stone-200 bg-white px-4 py-3">
@@ -202,7 +219,9 @@ export default async function AarPage({
           rows={rows}
           monthTotals={monthTotals}
           grandTotal={grandTotal}
+          monthIncome={monthIncome}
           monthlyBalances={monthlyBalances}
+          monthlyLowestBalances={monthlyLowestBalances}
         />
       )}
     </div>
