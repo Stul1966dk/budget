@@ -52,9 +52,17 @@ export default async function PrognosePage({
     { data: settingsData },
     { data: mappingsData },
     { data: chatMessagesData },
+    availableModels,
   ] = await Promise.all([
     fetchAllRows((from, to) =>
-      supabase.from("transactions").select("*").order("date").order("id").range(from, to),
+      supabase
+        .from("transactions")
+        .select(
+          "id, date, raw_text, amount, balance, comment, category_id, is_extraordinary, mapping_id, import_seq",
+        )
+        .order("date")
+        .order("id")
+        .range(from, to),
     ),
     supabase.from("categories").select("*").order("sort_order"),
     supabase
@@ -68,14 +76,13 @@ export default async function PrognosePage({
       .from("text_mappings")
       .select("id, comment, match_pattern, category_id, active"),
     supabase.from("advisor_messages").select("*").order("created_at"),
+    // Modellisten må aldrig vælte siden - fejler opslaget (manglende nøgle,
+    // netværk ...), vises vælgeren bare deaktiveret.
+    listAvailableModels().catch((err): AvailableModel[] | null => {
+      console.error("PrognosePage: kunne ikke hente modellisten:", err);
+      return null;
+    }),
   ]);
-
-  // Modellisten må aldrig vælte siden - fejler opslaget (manglende nøgle,
-  // netværk ...), vises vælgeren bare deaktiveret.
-  const availableModels: AvailableModel[] | null = await listAvailableModels().catch((err) => {
-    console.error("PrognosePage: kunne ikke hente modellisten:", err);
-    return null;
-  });
 
   const transactions = (transactionsData ?? []) as TransactionRow[];
   const categories = (categoriesData ?? []) as Category[];

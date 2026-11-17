@@ -19,6 +19,8 @@ type YearTransaction = Pick<
   | "raw_text"
   | "comment"
   | "mapping_id"
+  | "balance"
+  | "import_seq"
 >;
 type YearMappingRule = Pick<
   TextMappingRow,
@@ -32,6 +34,27 @@ export default async function AarPage({
 }) {
   const params = await searchParams;
   const supabase = await createClient();
+
+  // Det der ikke afhænger af det valgte år, sættes i gang med det samme, så
+  // det hentes samtidig med årsposteringerne i stedet for før eller efter.
+  const independent = Promise.all([
+    supabase.from("categories").select("*").order("sort_order"),
+    supabase.from("text_mappings").select("id, comment, match_pattern, display_mode"),
+    supabase
+      .from("alerts")
+      .select("*")
+      .eq("acknowledged", false)
+      .order("created_at", { ascending: false }),
+    // Kun den seneste kendte saldo - ikke alle posteringer fra alle år.
+    supabase
+      .from("transactions")
+      .select("date, balance, import_seq")
+      .not("balance", "is", null)
+      .order("date", { ascending: false })
+      .order("import_seq", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
 
   let year = params.year ? Number(params.year) : NaN;
   if (!Number.isFinite(year)) {
@@ -47,52 +70,42 @@ export default async function AarPage({
   const start = `${year}-01-01`;
   const end = `${year}-12-31`;
 
+  // Én forespørgsel for hele året, inkl. ekstraordinære poster: saldoen pr.
+  // måned skal have dem med, mens kategoritabellen sorterer dem fra nedenfor.
   const [
-    { data: categoriesData },
-    { data: transactionsData },
-    { data: mappingsData },
-    { data: balanceData },
-    { data: alertsData },
+    { data: yearData },
+    [
+      { data: categoriesData },
+      { data: mappingsData },
+      { data: alertsData },
+      { data: latestBalanceData },
+    ],
   ] = await Promise.all([
-    supabase.from("categories").select("*").order("sort_order"),
     fetchAllRows((from, to) =>
       supabase
         .from("transactions")
         .select(
-          "id, date, amount, category_id, is_extraordinary, raw_text, comment, mapping_id",
+          "id, date, amount, category_id, is_extraordinary, raw_text, comment, mapping_id, balance, import_seq",
         )
         .gte("date", start)
         .lte("date", end)
-        .eq("is_extraordinary", false)
         .order("date")
         .order("id")
         .range(from, to),
     ),
-    supabase.from("text_mappings").select("id, comment, match_pattern, display_mode"),
-    fetchAllRows((from, to) =>
-      supabase
-        .from("transactions")
-        .select("date, balance, import_seq")
-        .order("date")
-        .order("id")
-        .range(from, to),
-    ),
-    supabase
-      .from("alerts")
-      .select("*")
-      .eq("acknowledged", false)
-      .order("created_at", { ascending: false }),
+    independent,
   ]);
 
+  const yearRows = (yearData ?? []) as YearTransaction[];
   const categories = (categoriesData ?? []) as Category[];
-  const transactions = (transactionsData ?? []) as YearTransaction[];
+  const transactions = yearRows.filter((t) => !t.is_extraordinary);
   const categoryMap = new Map(categories.map((c) => [c.id, c]));
   const ruleMap = new Map(
     ((mappingsData ?? []) as YearMappingRule[]).map((m) => [m.id, m]),
   );
-  const currentBalance = computeCurrentBalance(balanceData ?? []);
-  const monthlyBalances = computeMonthlyBalances(balanceData ?? [], year);
-  const monthlyLowestBalances = computeMonthlyLowestBalances(balanceData ?? [], year);
+  const currentBalance = computeCurrentBalance(latestBalanceData ? [latestBalanceData] : []);
+  const monthlyBalances = computeMonthlyBalances(yearRows, year);
+  const monthlyLowestBalances = computeMonthlyLowestBalances(yearRows, year);
   const alerts = (alertsData ?? []) as AlertRow[];
 
   const monthIncome: number[] = new Array(12).fill(0);

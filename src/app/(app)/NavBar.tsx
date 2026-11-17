@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { signOut } from "@/lib/auth/signOut";
 import { usePinnedNav } from "./usePinnedNav";
 
@@ -60,6 +61,16 @@ export function NavBar() {
   const pathname = usePathname();
   const [pinned, setPinned] = usePinnedNav();
 
+  // Den fane man lige har trykket på, markeres med det samme - før serveren
+  // har svaret - så man kan se, at trykket er registreret. Nulstilles, når
+  // den nye side er vist (pathname har skiftet).
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [lastPathname, setLastPathname] = useState(pathname);
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
+    setPendingHref(null);
+  }
+
   return (
     <>
       <header className="flex items-center justify-between border-b border-stone-200 bg-white px-4 py-3 sm:px-6 lg:px-8">
@@ -81,8 +92,9 @@ export function NavBar() {
         aria-label="Hovednavigation"
       >
         {LINKS.map((link) => {
-          const isActive =
-            link.href === "/"
+          const isActive = pendingHref
+            ? pendingHref === link.href
+            : link.href === "/"
               ? pathname === "/"
               : pathname.startsWith(link.href);
 
@@ -91,6 +103,11 @@ export function NavBar() {
               key={link.href}
               href={link.href}
               aria-current={isActive ? "page" : undefined}
+              onClick={(event) => {
+                // Ctrl/Cmd/Shift-klik åbner i ny fane - så skifter denne side ikke.
+                if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                setPendingHref(link.href);
+              }}
               className={`flex min-h-16 flex-1 select-none flex-col items-center justify-center gap-1 px-0.5 text-center text-xs font-medium transition [-webkit-tap-highlight-color:transparent] sm:min-h-0 sm:flex-none sm:px-4 sm:py-3 sm:text-sm ${
                 isActive
                   ? "text-forest-900 sm:border-b-2 sm:border-forest-900"

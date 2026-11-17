@@ -17,6 +17,38 @@ export default async function PosteringerPage({
   const params = await searchParams;
   const supabase = await createClient();
 
+  const filterMode: "alle" | "umatchede" | "ekstraordinaere" =
+    params.filter === "umatchede"
+      ? "umatchede"
+      : params.filter === "ekstraordinaere"
+        ? "ekstraordinaere"
+        : "alle";
+
+  // Det der ikke afhænger af den valgte måned, sættes i gang med det samme,
+  // så det hentes samtidig med månedens posteringer.
+  const independent = Promise.all([
+    supabase.from("categories").select("*").order("sort_order"),
+    fetchAllRows((from, to) =>
+      supabase
+        .from("transactions")
+        .select("date")
+        .order("date", { ascending: false })
+        .order("id")
+        .range(from, to),
+    ),
+    supabase
+      .from("transactions")
+      .select("id", { count: "exact", head: true })
+      .eq("is_extraordinary", true),
+    filterMode === "ekstraordinaere"
+      ? supabase
+          .from("transactions")
+          .select("*")
+          .eq("is_extraordinary", true)
+          .order("date", { ascending: false })
+      : Promise.resolve({ data: [] }),
+  ]);
+
   let monthKey = params.month;
   if (!monthKey) {
     const { data: latest } = await supabase
@@ -31,12 +63,14 @@ export default async function PosteringerPage({
   const { start, end } = monthKeyToDateRange(monthKey);
 
   const [
-    { data: categoriesData },
     { data: transactionsData },
-    { data: monthsData },
-    { count: extraordinaryCount },
+    [
+      { data: categoriesData },
+      { data: monthsData },
+      { count: extraordinaryCount },
+      { data: extraordinaryAllTimeData },
+    ],
   ] = await Promise.all([
-    supabase.from("categories").select("*").order("sort_order"),
     supabase
       .from("transactions")
       .select("*")
@@ -44,18 +78,7 @@ export default async function PosteringerPage({
       .lte("date", end)
       .order("date", { ascending: true })
       .order("import_seq", { ascending: true }),
-    fetchAllRows((from, to) =>
-      supabase
-        .from("transactions")
-        .select("date")
-        .order("date", { ascending: false })
-        .order("id")
-        .range(from, to),
-    ),
-    supabase
-      .from("transactions")
-      .select("id", { count: "exact", head: true })
-      .eq("is_extraordinary", true),
+    independent,
   ]);
 
   const categories = (categoriesData ?? []) as Category[];
@@ -67,22 +90,7 @@ export default async function PosteringerPage({
   if (!availableMonths.includes(monthKey)) availableMonths.push(monthKey);
   availableMonths.sort().reverse();
 
-  const filterMode: "alle" | "umatchede" | "ekstraordinaere" =
-    params.filter === "umatchede"
-      ? "umatchede"
-      : params.filter === "ekstraordinaere"
-        ? "ekstraordinaere"
-        : "alle";
-
-  let extraordinaryAllTime: TransactionRow[] = [];
-  if (filterMode === "ekstraordinaere") {
-    const { data: extraordinaryAllTimeData } = await supabase
-      .from("transactions")
-      .select("*")
-      .eq("is_extraordinary", true)
-      .order("date", { ascending: false });
-    extraordinaryAllTime = (extraordinaryAllTimeData ?? []) as TransactionRow[];
-  }
+  const extraordinaryAllTime = (extraordinaryAllTimeData ?? []) as TransactionRow[];
 
   const visibleTransactions =
     filterMode === "ekstraordinaere"

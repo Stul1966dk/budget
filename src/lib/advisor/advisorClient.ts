@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { unstable_cache } from "next/cache";
 
 /**
  * Standardmodellen når husstanden ikke selv har valgt en under Rådgiver.
@@ -13,12 +14,7 @@ export function resolveAdvisorModel(chosenModel: string | null | undefined): str
 
 export type AvailableModel = { id: string; displayName: string };
 
-/**
- * Henter de modeller API-nøglen faktisk har adgang til, nyeste først (sådan
- * returnerer API'et dem). Listen hentes live, så nye modeller dukker op i
- * vælgeren uden kodeændring.
- */
-export async function listAvailableModels(): Promise<AvailableModel[]> {
+async function fetchAvailableModels(): Promise<AvailableModel[]> {
   const client = createAdvisorClient();
   const models: AvailableModel[] = [];
   for await (const model of client.models.list({ limit: 100 })) {
@@ -26,6 +22,20 @@ export async function listAvailableModels(): Promise<AvailableModel[]> {
   }
   return models;
 }
+
+/**
+ * De modeller API-nøglen faktisk har adgang til, nyeste først (sådan
+ * returnerer API'et dem). Listen hentes fra API'et og gemmes i et døgn, så
+ * Rådgiver-siden ikke venter på Anthropic ved hver visning - nye modeller
+ * dukker stadig op i vælgeren uden kodeændring, bare med op til et døgns
+ * forsinkelse. Et fejlet opslag gemmes ikke, så næste visning prøver igen.
+ * Listen er den samme for hele husstanden og indeholder ingen brugerdata.
+ */
+export const listAvailableModels = unstable_cache(
+  fetchAvailableModels,
+  ["anthropic-available-models"],
+  { revalidate: 60 * 60 * 24 },
+);
 
 /**
  * `effort` er kun understøttet af nyere modeller - ældre (fx claude-haiku-4-5)
