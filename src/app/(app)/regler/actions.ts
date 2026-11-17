@@ -153,11 +153,18 @@ export async function setMappingRuleActive(
   return { status: "success" };
 }
 
+const deleteSchema = z.object({ id: z.string().uuid() });
+
 export async function deleteMappingRule(
   id: string,
 ): Promise<{ status: "success" | "error"; message?: string }> {
+  const parsed = deleteSchema.safeParse({ id });
+  if (!parsed.success) {
+    return { status: "error", message: "Ugyldigt id." };
+  }
+
   const supabase = await createClient();
-  const { error } = await supabase.from("text_mappings").delete().eq("id", id);
+  const { error } = await supabase.from("text_mappings").delete().eq("id", parsed.data.id);
 
   if (error) {
     return { status: "error", message: "Kunne ikke slette reglen." };

@@ -164,11 +164,18 @@ export async function acknowledgeAlert(
   return { status: "success" };
 }
 
+const ruleIdSchema = z.object({ ruleId: z.string().uuid() });
+
 export async function applyRuleRetroactively(ruleId: string): Promise<{
   status: "success" | "error";
   updated?: number;
   message?: string;
 }> {
+  const parsed = ruleIdSchema.safeParse({ ruleId });
+  if (!parsed.success) {
+    return { status: "error", message: "Ugyldigt id." };
+  }
+
   const supabase = await createClient();
 
   const { data: ruleRow, error: ruleError } = await supabase
@@ -176,7 +183,7 @@ export async function applyRuleRetroactively(ruleId: string): Promise<{
     .select(
       "id, match_pattern, match_type, comment, category_id, min_amount, max_amount, display_mode, is_extraordinary",
     )
-    .eq("id", ruleId)
+    .eq("id", parsed.data.ruleId)
     .single();
 
   if (ruleError || !ruleRow) {

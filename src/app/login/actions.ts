@@ -40,7 +40,13 @@ export async function requestMagicLink(
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: `${origin}/auth/callback` },
+    options: {
+      emailRedirectTo: `${origin}/auth/callback`,
+      // Login må aldrig oprette nye brugere - husstandens to brugere findes
+      // allerede. Sammen med "Allow new users to sign up" slået fra i
+      // Supabase lukker det for selvoprettede konti.
+      shouldCreateUser: false,
+    },
   });
 
   if (error) {

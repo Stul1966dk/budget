@@ -1,10 +1,22 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+/**
+ * Kun stier i appen selv må bruges som mål efter login. Ellers kunne et link
+ * med fx `?next=@ondt-site.dk` eller `?next=//ondt-site.dk` sende brugeren
+ * videre til en fremmed side, når login lykkes.
+ */
+function safeRedirectPath(next: string | null): string {
+  if (!next || !next.startsWith("/") || next.startsWith("//") || next.includes("\\")) {
+    return "/";
+  }
+  return next;
+}
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  const next = safeRedirectPath(searchParams.get("next"));
   const authError = searchParams.get("error_description") ?? searchParams.get("error");
 
   if (authError) {

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
 import { parseDanskeBankFile } from "@/lib/csv/parseDanskeBank";
@@ -23,14 +24,24 @@ export type ImportResult = {
   alertMessages?: string[];
 };
 
-export async function importCsvFile(formData: FormData): Promise<ImportResult> {
-  const file = formData.get("file");
+// En månedlig Danske Bank-eksport fylder typisk 10-50 KB. 2 MB giver god
+// plads til flere års posteringer i én fil, men stopper alt for store filer.
+const MAX_FILE_BYTES = 2 * 1024 * 1024;
 
-  if (!(file instanceof File) || file.size === 0) {
-    return { status: "error", message: "Ingen fil modtaget." };
+const uploadSchema = z.object({
+  file: z
+    .instanceof(File, { message: "Ingen fil modtaget." })
+    .refine((f) => f.size > 0, "Filen er tom.")
+    .refine((f) => f.size <= MAX_FILE_BYTES, "Filen er for stor (højst 2 MB)."),
+});
+
+export async function importCsvFile(formData: FormData): Promise<ImportResult> {
+  const parsed = uploadSchema.safeParse({ file: formData.get("file") });
+  if (!parsed.success) {
+    return { status: "error", message: parsed.error.issues[0]?.message ?? "Ugyldig fil." };
   }
 
-  const buffer = await file.arrayBuffer();
+  const buffer = await parsed.data.file.arrayBuffer();
   const { rows, errors } = parseDanskeBankFile(buffer);
 
   // Samme fil (eller overlappende perioder) kan uploades flere gange - fjern
@@ -136,7 +147,7 @@ export async function importCsvFile(formData: FormData): Promise<ImportResult> {
   }
 
   await supabase.from("uploads").insert({
-    filename: file.name,
+    filename: parsed.data.file.name,
     rows_imported: toInsert.length,
     rows_skipped: rowsSkipped,
   });
