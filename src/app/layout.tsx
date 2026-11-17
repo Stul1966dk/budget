@@ -28,6 +28,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#1f3d2e",
+  // Giver adgang til env(safe-area-inset-*), så mobilmenuen ikke ligger
+  // oven i iPhones hjemmelinje.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
