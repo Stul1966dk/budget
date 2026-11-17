@@ -1,12 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
-import { fetchAllRows } from "@/lib/supabase/fetchAllRows";
 import {
-  extractMonthKey,
   getCurrentMonthKey,
   monthKeyToDateRange,
 } from "@/lib/month";
 import type { Category, TransactionRow } from "@/lib/types/db";
 import { MonthSelector } from "../MonthSelector";
+import { fetchAvailableMonths } from "./fetchAvailableMonths";
 import { TransactionList } from "../TransactionList";
 
 export default async function PosteringerPage({
@@ -26,16 +25,10 @@ export default async function PosteringerPage({
 
   // Det der ikke afhænger af den valgte måned, sættes i gang med det samme,
   // så det hentes samtidig med månedens posteringer.
+  const monthsPromise = fetchAvailableMonths(supabase);
   const independent = Promise.all([
     supabase.from("categories").select("*").order("sort_order"),
-    fetchAllRows((from, to) =>
-      supabase
-        .from("transactions")
-        .select("date")
-        .order("date", { ascending: false })
-        .order("id")
-        .range(from, to),
-    ),
+    monthsPromise,
     supabase
       .from("transactions")
       .select("id", { count: "exact", head: true })
@@ -49,16 +42,9 @@ export default async function PosteringerPage({
       : Promise.resolve({ data: [] }),
   ]);
 
-  let monthKey = params.month;
-  if (!monthKey) {
-    const { data: latest } = await supabase
-      .from("transactions")
-      .select("date")
-      .order("date", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    monthKey = latest ? extractMonthKey(latest.date) : getCurrentMonthKey();
-  }
+  // Uden valgt måned vises den nyeste - den står først i månedslisten, som
+  // alligevel hentes, så det koster ikke en ekstra forespørgsel.
+  const monthKey = params.month ?? (await monthsPromise)[0] ?? getCurrentMonthKey();
 
   const { start, end } = monthKeyToDateRange(monthKey);
 
@@ -66,7 +52,7 @@ export default async function PosteringerPage({
     { data: transactionsData },
     [
       { data: categoriesData },
-      { data: monthsData },
+      knownMonths,
       { count: extraordinaryCount },
       { data: extraordinaryAllTimeData },
     ],
@@ -84,9 +70,7 @@ export default async function PosteringerPage({
   const categories = (categoriesData ?? []) as Category[];
   const allTransactions = (transactionsData ?? []) as TransactionRow[];
 
-  const availableMonths = Array.from(
-    new Set((monthsData ?? []).map((r) => extractMonthKey(r.date))),
-  );
+  const availableMonths = [...knownMonths];
   if (!availableMonths.includes(monthKey)) availableMonths.push(monthKey);
   availableMonths.sort().reverse();
 
