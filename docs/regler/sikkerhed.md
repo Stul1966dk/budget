@@ -10,6 +10,8 @@ Gælder kun når Next.js + Supabase er i brug.
 
 4. **`auth.getUser()` — ikke `getSession()` — server-side.** `getSession()` stoler på client-sendte JWT-data og er ikke sikker til server-side validering.
 
+   **Undtagelse (godkendt 2026-11-17):** Proxyen (`src/lib/supabase/middleware.ts`) bruger `getClaims()`, som verificerer tokenets signatur lokalt mod projektets asymmetriske nøgle (ES256). Det sparer et kald til Supabase ved hvert request. Prisen er, at et login lukket i Supabase virker til tokenet udløber. Proxyen styrer kun omdirigering; adgang til data afgøres af RLS. Brug stadig `getUser()` andre steder server-side.
+
 5. **Roller og permissions tjekkes altid server-side.** Aldrig fra client state, localStorage, eller props sendt fra browseren.
 
 6. **Explicit ownership-tjek når `service_role` bypasser RLS.** Når du bruger `service_role` til at omgå RLS, skal du manuelt verificere at brugeren ejer den ressource de tilgår.

@@ -26,9 +26,15 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims() tjekker login-tokenets signatur lokalt mod Supabase's
+  // offentlige nøgle (ES256) i stedet for at spørge Supabase ved hvert
+  // request som getUser() - det sparer ca. 150 ms pr. faneskift. Udløbne
+  // tokens fornyes stadig her. Bevidst undtagelse fra sikkerhedsregel 4
+  // (se docs/regler/sikkerhed.md): et login, der er lukket i Supabase, virker
+  // indtil tokenet udløber. Proxyen styrer kun omdirigering til login - selve
+  // adgangen til data afgøres af RLS i databasen.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims ?? null;
 
   const isAuthRoute =
     request.nextUrl.pathname.startsWith("/login") ||
